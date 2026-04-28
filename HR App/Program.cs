@@ -65,7 +65,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 QuestPDF.Settings.License = LicenseType.Community;
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();

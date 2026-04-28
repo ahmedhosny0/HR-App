@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace HR_App.Controllers
 {
@@ -12,6 +13,88 @@ namespace HR_App.Controllers
         // =========================
         // Create Request
         // =========================
+        public IActionResult ManagerRequests()
+        {
+            // جلب ID المدير الحالي من الـ Session
+          //  var currentManagerId = HttpContext.Session.GetString("EmployeeId");
+
+            //if (string.IsNullOrEmpty(currentManagerId))
+            //{
+            //    return RedirectToAction("Login", "Login");
+            //}
+
+            List<LeaveRequestVM> list = new List<LeaveRequestVM>();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                // نستخدم View أو Join لجلب أسماء الموظفين بدلاً من الأكواد فقط
+                string query = @"
+                  select * from RptModel where ManagerCode=@managerCode ";
+
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@managerCode", ViewBag.UserName);
+
+                con.Open();
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    list.Add(new LeaveRequestVM
+                    {
+                        ModelSerial = Convert.ToInt32(dr["ModelSerial"]),
+                        EmployeeName = dr["EmployeeName"].ToString(),
+                        Job = dr["EmployeeJob"]?.ToString(),
+                        FromDate = Convert.ToDateTime(dr["FromDate"]),
+                        ToDate = Convert.ToDateTime(dr["ToDate"]),
+                        Notes = dr["Notes"].ToString()
+                    });
+                }
+            }
+
+            return View(list);
+        }
+        // 4. إجراءات المدير (موافقة/رفض)
+        // =========================
+        [HttpPost]
+        public IActionResult ApproveByManager(int id)
+        {
+            UpdateStatus(id, 1, null, null); // للموافقة لا نغير الملاحظات الأصلية غالباً
+            return Ok();
+        }
+
+        [HttpPost]
+        public IActionResult RejectByManager(int id, string reason)
+        {
+            // نمرر سبب الرفض ليتم حفظه في عمود الـ Notes
+            UpdateStatus(id, 2, null, reason);
+            return Ok();
+        }
+
+        // تعديل دالة التحديث لاستقبال الملاحظات (Notes)
+        private void UpdateStatus(int id, int? managerStatus, int? hrStatus, string notes)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                List<string> updates = new List<string>();
+                if (managerStatus.HasValue) updates.Add("ModelStatus = @ms");
+                if (hrStatus.HasValue) updates.Add("HRModelStatus = @hs");
+                if (!string.IsNullOrEmpty(notes)) updates.Add("Notes = @notes"); // تحديث الملاحظات إذا وجدت
+
+                if (updates.Count == 0) return;
+
+                string query = $"UPDATE ModelCode SET {string.Join(",", updates)} WHERE ModelSerial = @id";
+
+                SqlCommand cmd = new SqlCommand(query, con);
+                if (managerStatus.HasValue) cmd.Parameters.AddWithValue("@ms", managerStatus.Value);
+                if (hrStatus.HasValue) cmd.Parameters.AddWithValue("@hs", hrStatus.Value);
+                if (!string.IsNullOrEmpty(notes)) cmd.Parameters.AddWithValue("@notes", notes);
+                cmd.Parameters.AddWithValue("@id", id);
+
+                con.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         public IActionResult Create()
         {
             LeaveRequestVM vm = new LeaveRequestVM
@@ -177,13 +260,12 @@ namespace HR_App.Controllers
 
             using (SqlConnection con = new SqlConnection(connStr))
             {
-                string query = "SELECT * FROM RptModel --WHERE EmployeeSerial = @empId";
+                string query = "SELECT * FROM RptModel WHERE EmployeeCode = @empId";
 
                 SqlCommand cmd = new SqlCommand(query, con);
-               //cmd.Parameters.AddWithValue("@empId", empId);
+               cmd.Parameters.AddWithValue("@empId", ViewBag.UserName);
                 con.Open();
                 SqlDataReader dr = cmd.ExecuteReader();
-
                 while (dr.Read())
                 {
                     list.Add(new LeaveRequestVM
@@ -192,7 +274,7 @@ namespace HR_App.Controllers
                         StartDate = ((DateTime)dr["FromDate"]).ToString("yyyy-MM-dd"),
                         EndDate = Convert.ToDateTime(dr["ToDate"]).ToString("yyyy-MM-dd"),
                         ModelName = dr["ModelName"].ToString(),
-                        EmployeeName = dr["Notes"].ToString(),
+                        EmployeeName = dr["EmployeeName"].ToString(),
                         Job = dr["EmployeeJob"].ToString(),
                         RoleName = dr["RoleName"].ToString(),
                         ManagerName = dr["ManagerName"].ToString(),
@@ -204,53 +286,6 @@ namespace HR_App.Controllers
             }
 
             return View(list);
-        }
-
-        // =========================
-        // Manager شاشة الموافقة
-        // =========================
-        public IActionResult ManagerRequests(int managerId)
-        {
-            List<LeaveRequestVM> list = new List<LeaveRequestVM>();
-
-            using (SqlConnection con = new SqlConnection(connStr))
-            {
-                string query = @"
-            SELECT * FROM ModelCode 
-            WHERE ManagerSerial = @managerId AND ModelStatus = 0";
-
-                SqlCommand cmd = new SqlCommand(query, con);
-                cmd.Parameters.AddWithValue("@managerId", managerId);
-
-                con.Open();
-                SqlDataReader dr = cmd.ExecuteReader();
-
-                while (dr.Read())
-                {
-                    list.Add(new LeaveRequestVM
-                    {
-                        ModelSerial = Convert.ToInt32(dr["ModelSerial"]),
-                        FromDate = Convert.ToDateTime(dr["FromDate"]),
-                        ToDate = Convert.ToDateTime(dr["ToDate"]),
-                        Notes = dr["Notes"].ToString()
-                    });
-                }
-            }
-
-            return View(list);
-        }
-
-        // موافقة المدير
-        public IActionResult ApproveByManager(int id)
-        {
-            UpdateStatus(id, 1, null);
-            return RedirectToAction("ManagerRequests");
-        }
-
-        public IActionResult RejectByManager(int id)
-        {
-            UpdateStatus(id, 2, null);
-            return RedirectToAction("ManagerRequests");
         }
 
         // =========================
@@ -286,48 +321,7 @@ namespace HR_App.Controllers
             return View(list);
         }
 
-        public IActionResult ApproveByHR(int id)
-        {
-            UpdateStatus(id, null, 1);
-            return RedirectToAction("HRRequests");
-        }
+       
 
-        public IActionResult RejectByHR(int id)
-        {
-            UpdateStatus(id, null, 2);
-            return RedirectToAction("HRRequests");
-        }
-
-        // =========================
-        // Helper
-        // =========================
-        private void UpdateStatus(int id, int? managerStatus, int? hrStatus)
-        {
-            using (SqlConnection con = new SqlConnection(connStr))
-            {
-                string query = "UPDATE ModelCode SET ";
-
-                if (managerStatus != null)
-                    query += "ModelStatus = @ms ";
-
-                if (hrStatus != null)
-                    query += (managerStatus != null ? "," : "") + " HRModelStatus = @hs ";
-
-                query += " WHERE ModelSerial = @id";
-
-                SqlCommand cmd = new SqlCommand(query, con);
-
-                if (managerStatus != null)
-                    cmd.Parameters.AddWithValue("@ms", managerStatus);
-
-                if (hrStatus != null)
-                    cmd.Parameters.AddWithValue("@hs", hrStatus);
-
-                cmd.Parameters.AddWithValue("@id", id);
-
-                con.Open();
-                cmd.ExecuteNonQuery();
-            }
-        }
     }
 }

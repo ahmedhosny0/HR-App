@@ -1,102 +1,103 @@
 ﻿@model HR_App.ViewModel.LeaveRequestVM
-<link rel="stylesheet" type="text/css" href="/css/Evaluation.css" />
 <link rel="stylesheet" type="text/css" href="/css/components.css" />
 <link rel="stylesheet" type="text/css" href="/css/report.css" />
 <link rel="stylesheet" type="text/css" href="/css/base.css" />
 <link href="/css/lib/select2.min.css" rel="stylesheet" />
 <link href="/css/lib/bootstrap.min.css" rel="stylesheet">
+
 <div class="container mt-5">
-    <div class="card p-4">
-        <h4 class="mb-4"><i class="bi bi-calendar-plus"></i> طلب إجازة</h4>
+    <div class="card shadow-sm border-0" style="border-radius: 15px;">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-plus me-2"></i> تقديم طلب إجازة جديد</h5>
+        </div>
 
-        <form method="post">
-
-            <!-- 👇 الموظف -->
-            <div class="mb-3">
-                <label class="form-label">الموظف</label>
-                <select class="form-select" name="EmployeeSerial" required>
-                    <option value="">-- اختر الموظف --</option>
-
-                    @foreach (var emp in Model.Employees)
-                    {
-                        <option value="@emp.Value">@emp.Text</option>
-                    }
-                </select>
-            </div>
-            @* <div class="mb-3">
-                <label class="form-label">المدير </label>
-                <select class="form-select" name="ManagerSerial" required>
-                    <option value="">-- اختر المدير --</option>
-
-                    @foreach (var emp in Model.Managers)
-                    {
-                        <option value="@emp.Value">@emp.Text</option>
-                    }
-                </select>
-            </div> *@
-
-            <!-- 👇 نوع الاجازه -->
-            <div class="mb-3">
-                <label class="form-label">نوع الإجازة</label>
-                <select class="form-select" name="ModelTypeSerial" required>
-                    <option value="">-- اختر نوع الإجازة --</option>
-
-                    @foreach (var item in Model.LeaveTypes)
-                    {
-                        <option value="@item.Value">@item.Text</option>
-                    }
-                </select>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">من تاريخ</label>
-                    <input type="date" class="form-control" name="FromDate" required />
+        <div class="card-body p-4">
+            <form method="post" id="leaveForm">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">الموظف</label>
+                    <select class="form-select select2" name="EmployeeSerial" required>
+                        <option value="">-- اختر الموظف --</option>
+                        @foreach (var emp in Model.Employees)
+                        {
+                            <option value="@emp.Value">@emp.Text</option>
+                        }
+                    </select>
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">إلى تاريخ</label>
-                    <input type="date" class="form-control" name="ToDate" required />
+                <div class="mb-3">
+                    <label class="form-label fw-bold">نوع الإجازة</label>
+                    <select class="form-select select2" name="ModelTypeSerial" required>
+                        <option value="">-- اختر نوع الإجازة --</option>
+                        @foreach (var item in Model.LeaveTypes)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
                 </div>
-            </div>
 
-            <div class="mt-3">
-                <label class="form-label">ملاحظات</label>
-                <textarea class="form-control" name="Notes" rows="3"></textarea>
-            </div>
-
-            <button class="btn btn-primary mt-3">
-                <i class="bi bi-send"></i> إرسال الطلب
-            </button>
-        </form>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">من تاريخ</label>
+                        <input type="date" class="form-control" name="FromDate" id="FromDate" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">إلى تاريخ</label>
+                        <input type="date" class="form-control" name="ToDate" id="ToDate" required />
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                        <i class="bi bi-send-fill me-2"></i> إرسال الطلب للموافقة
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
 <script src="/js/lib/jquery-3.6.0.min.js"></script>
 <script src="/js/lib/select2.min.js"></script>
-<script src="/js/lib/sweetalert2@11.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-    $('.select2').select2({ placeholder: 'اختر الفرع', allowClear: true, width: '100%' });
-
-    $(document).on('select2:open', () => {
-        setTimeout(() => document.querySelector('.select2-container--open .select2-search__field').focus(), 0);
-    });
-
-
-</script>
-<script>
-    
-    // إعداد الـ select2
     $(document).ready(function () {
-    
-        // عرض الرسائل بناءً على نجاح أو فشل الحفظ
+        // تفعيل Select2
+        $('.select2').select2({
+            theme: 'bootstrap-5', // إذا كنت تستخدم ثيم بوتستراب
+            width: '100%',
+            dir: "rtl"
+        });
+
+        // تصحيح فوكس البحث في Select2
+        $(document).on('select2:open', () => {
+            setTimeout(() => document.querySelector('.select2-search__field').focus(), 50);
+        });
+
+        // منع إرسال تواريخ خاطئة
+        $('#leaveForm').on('submit', function(e) {
+            let from = new Date($('#FromDate').val());
+            let to = new Date($('#ToDate').val());
+
+            if (to < from) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ في التاريخ',
+                    text: 'تاريخ النهاية لا يمكن أن يكون قبل تاريخ البداية!',
+                    confirmButtonText: 'مفهوم'
+                });
+            }
+        });
+
+        // رسائل النجاح والخطأ من السيرفر
         var success = '@Html.Raw(TempData["SuccessMessage"])';
         var error = '@Html.Raw(TempData["ErrorMessage"])';
 
         if (success) {
-            Swal.fire({ icon: 'success', title: 'تم الحفظ بنجاح', text: success, confirmButtonText: 'حسناً' })
+            Swal.fire({ icon: 'success', title: 'تم!', text: success, confirmButtonText: 'حسناً' })
                 .then(() => {
-                    document.querySelector("form").reset();
-                    document.getElementById("totalScore").innerText = 0;
+                    $('#leaveForm')[0].reset();
+                    $('.select2').val(null).trigger('change');
                 });
         }
 

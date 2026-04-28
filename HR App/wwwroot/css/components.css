@@ -1,4 +1,4 @@
-﻿/* =========================
+﻿/* Components File Css
    FILTER CARD (CLEAN)
 ========================= */
 .filter-card {
@@ -172,4 +172,64 @@
         font-weight: bold;
         color: #fff;
     }
+}
+/* تحسين شكل الجدول في الموبايل */
+@media (max-width: 768px) {
+    .table-modern thead {
+        display: none; /* إخفاء رؤوس الجدول */
+    }
+
+    .table-modern, .table-modern tbody, .table-modern tr, .table-modern td {
+        display: block;
+        width: 100%;
+    }
+
+        .table-modern tr {
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .table-modern td {
+            text-align: left; /* أو right حسب اتجاه اللغة */
+            padding: 10px 5px;
+            border: none;
+            border-bottom: 1px dashed #efefef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            direction: rtl; /* لضمان اتجاه النص العربي */
+        }
+
+            .table-modern td:last-child {
+                border-bottom: none;
+                justify-content: center; /* توسيط الأزرار في الأسفل */
+                padding-top: 15px;
+            }
+
+            /* استخدام الـ Label المعرف في الـ HTML */
+            .table-modern td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #444;
+                font-size: 13px;
+            }
+
+    .mobile-btn-group {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+    }
+
+        .mobile-btn-group .btn {
+            flex: 1; /* جعل الأزرار تأخذ عرض متساوي في الموبايل */
+        }
+}
+
+/* تنسيق عام بسيط */
+.table-modern td div {
+    line-height: 1.4;
 }

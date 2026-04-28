@@ -1,55 +1,89 @@
 ﻿@model List<HR_App.ViewModel.LeaveRequestVM>
+
 <link rel="stylesheet" type="text/css" href="/css/Evaluation.css" />
 <link rel="stylesheet" type="text/css" href="/css/components.css" />
 <link rel="stylesheet" type="text/css" href="/css/report.css" />
 <link rel="stylesheet" type="text/css" href="/css/base.css" />
 <link href="/css/lib/select2.min.css" rel="stylesheet" />
 <link href="/css/lib/bootstrap.min.css" rel="stylesheet">
+
 <div class="container mt-5">
-    <div class="card p-4">
-        <h4 class="mb-4"><i class="bi bi-list"></i> طلباتي</h4>
-
-        <div id="reportArea">
-            <div class="card table-card">
-                <table id="example" class="table-modern">
-            <thead class="table-light">
-                <tr>
-                    <th>الموظف</th>
-                    <th>الوظيفه</th>
-                    <th>النموذج</th>
-                    <th>المدير</th>
-                    <th>من</th>
-                    <th>إلى</th>
-                    <th>ملاحظات</th>
-                    <th>رد المدير</th>
-                    <th>رد HR</th>
-                </tr>
-            </thead>
-           
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@item.EmployeeName</td>
-                        <td>@item.Job</td>
-                        <td>@item.ModelName</td>
-                        <td>@item.ManagerName</td>
-                        <td>@item.StartDate</td>
-                        <td>@item.EndDate</td>
-                        <td>@item.Notes</td>
-
-                        <td>
-                           @item.ManagerReply
-                        </td>
-
-                        <td>
-                            @item.HRReply
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="card p-0 shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 text-primary fw-bold"><i class="bi bi-journal-text me-2"></i> سجل الطلبات المقدمة</h5>
         </div>
+
+        <div class="card-body p-0">
+            <div id="reportArea">
+                <table id="example" class="table table-hover table-modern align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الموظف</th>
+                            <th>النموذج</th>
+                            <th>المدير المباشر</th>
+                            <th>الفترة</th>
+                            <th>ملاحظات</th>
+                            <th class="text-center">حالة المدير</th>
+                            <th class="text-center">حالة HR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td data-label="الموظف">
+                                    <div class="fw-bold">@item.EmployeeName</div>
+                                    <small class="text-muted">@item.Job</small>
+                                </td>
+                                <td data-label="النموذج">
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">@item.ModelName</span>
+                                </td>
+                                <td data-label="المدير">@item.ManagerName</td>
+                                <td data-label="الفترة">
+                                    <div class="small text-nowrap"><strong>من:</strong> @item.StartDate</div>
+                                    <div class="small text-nowrap"><strong>إلى:</strong> @item.EndDate</div>
+                                </td>
+                                <td data-label="ملاحظات">
+                                    <div class="text-truncate" style="max-width: 120px;" title="@item.Notes">
+                                        @(string.IsNullOrEmpty(item.Notes) ? "-" : item.Notes)
+                                    </div>
+                                </td>
+                                <td data-label="رد المدير" class="text-center">
+                                    @if (string.IsNullOrEmpty(item.ManagerReply)) {
+                                        <span class="badge rounded-pill bg-light text-secondary border">قيد الانتظار</span>
+                                    } else if (item.ManagerReply.Contains("موافق") || item.ManagerReply.Contains("تم")) {
+                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle-fill"></i> @item.ManagerReply</span>
+                                    } else {
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-x-circle-fill"></i> @item.ManagerReply</span>
+                                    }
+                                </td>
+                                <td data-label="رد HR" class="text-center">
+                                    @if (string.IsNullOrEmpty(item.HRReply)) {
+                                        <span class="badge rounded-pill bg-light text-secondary border">تحت المراجعة</span>
+                                    } else if (item.HRReply.Contains("موافق") || item.HRReply.Contains("تم")) {
+                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">@item.HRReply</span>
+                                    } else {
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle">@item.HRReply</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+
+    <script>
+        $(document).ready(function() {
+            // إذا كنت تستخدم DataTable لتفعيل البحث والفلترة
+            $('#example').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/ar.json'
+                },
+                responsive: true
+            });
+        });
+    </script>

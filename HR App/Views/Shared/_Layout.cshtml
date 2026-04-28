@@ -49,9 +49,12 @@
                         <a href="/Evaluation/Create" class="dropdown-item">إنشاء تقييم</a>
                         <a href="/Evaluation/GetAllEvaluations" class="dropdown-item">كل التقييمات</a>
                     </div>
-                </div> *@
+                </div> *@  
                 <div class="nav-item ">
                     <a href="/Leave/Create" id="" class="nav-link">تسجيل طلب</a>
+                </div>
+                <div class="nav-item ">
+                    <a href="/Leave/ManagerRequests" id="" class="nav-link">طلبات الموظفين</a>
                 </div>
                 <div class="nav-item ">
                     <a href="/Leave/MyRequests" id="" class="nav-link">عرض الطلبات المسجله</a>
@@ -85,7 +88,7 @@
                                $('#CreateEvaluation').hide();
                                $('#AllEvaluations').hide();
 
-                       if (uuu === 'True' || isUsername === 'True') {
+                       if (role === 'Manger' || role === 'HR') {
                                $('#AllEvaluations').show();
                }
                else

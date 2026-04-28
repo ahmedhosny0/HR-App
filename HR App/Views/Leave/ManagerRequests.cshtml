@@ -1,0 +1,117 @@
+﻿@model List<HR_App.ViewModel.LeaveRequestVM>
+
+@{
+    ViewData["Title"] = "طلبات الموظفين";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet">
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center p-3">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-person-check-fill me-2"></i> طلبات الموظفين المعلقة</h6>
+            <span class="badge bg-white text-primary">@Model.Count طلب</span>
+        </div>
+        <div class="card-body p-0">
+            <div id="reportArea">
+                <table class="table-modern w-100">
+                    <thead>
+                        <tr>
+                            <th>الموظف</th>
+                            <th>التاريخ</th>
+                            <th>المدة</th>
+                            <th>الملاحظات</th>
+                            <th class="text-center">الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr id="row-@item.ModelSerial">
+                                    <td data-label="الموظف">
+                                        <div class="fw-bold">@item.EmployeeName</div>
+                                        <div class="small text-muted">@item.Job</div>
+                                    </td>
+                                    <td data-label="التاريخ">
+                                        <div class="small">من: @item.FromDate.ToString("yyyy/MM/dd")</div>
+                                        <div class="small">إلى: @item.ToDate.ToString("yyyy/MM/dd")</div>
+                                    </td>
+                                    <td data-label="المدة">
+                                        @{
+                                            var days = (item.ToDate - item.FromDate).Days + 1;
+                                        }
+                                        <span class="badge bg-light text-dark border">@days يوم</span>
+                                    </td>
+                                    <td data-label="الملاحظات">
+                                        <span class="text-muted small">@(string.IsNullOrEmpty(item.Notes) ? "-" : item.Notes)</span>
+                                    </td>
+                                    <td data-label="الإجراء" class="text-center">
+                                        <div class="mobile-btn-group">
+                                            <button onclick="processRequest(@item.ModelSerial, 'ApproveByManager')" class="btn btn-success btn-sm px-3">
+                                                <i class="bi bi-check-lg"></i> موافقة
+                                            </button>
+                                            <button onclick="processRequest(@item.ModelSerial, 'RejectByManager')" class="btn btn-danger btn-sm px-3">
+                                                <i class="bi bi-x-lg"></i> رفض
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    لا توجد طلبات حالياً
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/lib/jquery/dist/jquery.min.js"></script>
+
+<script>
+    function processRequest(id, actionName) {
+        const isReject = actionName === 'RejectByManager';
+        const title = isReject ? 'سبب الرفض' : 'موافقة على الطلب';
+
+        Swal.fire({
+            title: title,
+            input: isReject ? 'textarea' : null,
+            inputPlaceholder: 'اكتب ملاحظاتك هنا...',
+            icon: isReject ? 'warning' : 'question',
+            showCancelButton: true,
+            confirmButtonText: 'تأكيد',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: isReject ? '#dc3545' : '#198754',
+            inputValidator: (value) => {
+                if (isReject && !value) return 'يجب كتابة سبب الرفض!';
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/Leave/${actionName}`,
+                    type: 'POST',
+                    data: { id: id, reason: result.value || "" },
+                    success: function () {
+                        Swal.fire('تم!', 'تم التحديث بنجاح', 'success');
+                        $(`#row-${id}`).fadeOut();
+                    }
+                });
+            }
+        });
+    }
+</script>
