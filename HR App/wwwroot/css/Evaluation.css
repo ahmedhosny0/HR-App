@@ -1,0 +1,219 @@
+﻿/* =========================
+   GRADE TABLE (BASE)
+========================= */
+.grade-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    background: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+    /* HEADER */
+    .grade-table thead {
+        background: linear-gradient(90deg, #1f2937, #374151);
+        color: #fff;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    /* CELLS */
+    .grade-table th,
+    .grade-table td {
+        padding: 10px;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+/* =========================
+   ROW STATES
+========================= */
+.grade-row {
+    background: #fff;
+    transition: 0.2s;
+}
+
+    .grade-row:hover {
+        background: #f8fafc;
+        transform: scale(1.01);
+    }
+
+    /* SUCCESS / ERROR ROWS */
+    .grade-row.yes {
+        background: linear-gradient(90deg, #dcfce7, #bbf7d0) !important;
+        border-left: 5px solid #22c55e;
+    }
+
+    .grade-row.no {
+        background: linear-gradient(90deg, #fee2e2, #fecaca) !important;
+        border-left: 5px solid #ef4444;
+    }
+
+/* =========================
+   INPUTS
+========================= */
+.grade-input {
+    max-width: 60px;
+    text-align: center;
+}
+
+.grade-table input[type="text"] {
+    width: 100%;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+}
+
+.percentage-input {
+    text-align: center;
+}
+
+.answer-radio {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* =========================
+   SCORE BOX
+========================= */
+.total-score {
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    color: #333;
+    border-radius: 8px;
+    border: 2px solid #a60f0f;
+    display: inline-block;
+    min-width: 120px;
+}
+
+/* =========================
+   STATUS COLORS (TEXT)
+========================= */
+.yes {
+    color: #16a34a;
+    font-weight: bold;
+}
+
+.no {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.grade {
+    color: #f59e0b;
+    font-weight: bold;
+}
+
+/* =========================
+   EMAIL INPUT
+========================= */
+#emailTo {
+    min-width: 220px;
+    border-radius: 8px;
+}
+
+/* =========================
+   PAGE HEADER
+========================= */
+.page-header h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* =========================
+   KPI BOX
+========================= */
+.kpi-box {
+    margin: 20px auto;
+    padding: 20px;
+    width: 200px;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: white;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.kpi-title {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.kpi-value {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes flashGreen {
+    from {
+        background: #86efac;
+    }
+
+    to {
+        background: linear-gradient(90deg, #dcfce7, #bbf7d0);
+    }
+}
+
+@keyframes flashRed {
+    from {
+        background: #fca5a5;
+    }
+
+    to {
+        background: linear-gradient(90deg, #fee2e2, #fecaca);
+    }
+}
+
+/* =========================
+   MOBILE (ONE SYSTEM ONLY)
+========================= */
+@media (max-width: 768px) {
+
+    .grade-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+        .grade-table thead {
+            display: none;
+        }
+
+        .grade-table tr {
+            display: block;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .grade-table td {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px;
+            text-align: right;
+        }
+
+            .grade-table td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                flex: 1;
+                text-align: right;
+            }
+
+    .grade-input {
+        max-width: 50px;
+    }
+
+    #emailTo {
+        width: 100%;
+    }
+}

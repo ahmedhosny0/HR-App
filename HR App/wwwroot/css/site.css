@@ -1,0 +1,241 @@
+/* RESET */
+body {
+    margin: 0;
+    height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #111827, #1f2937);
+    color: white;
+}
+
+/* LAYOUT */
+.container-main {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* LEFT SIDE */
+.left-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px;
+    animation: fadeIn 1s ease;
+}
+
+.brand {
+    font-size: 44px;
+    font-weight: bold;
+    color: #ff3b3b;
+    letter-spacing: 1px;
+}
+
+.subtitle {
+    margin-top: 10px;
+    font-size: 18px;
+    opacity: 0.75;
+}
+
+.features {
+    margin-top: 40px;
+    line-height: 2.4;
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+/* RIGHT SIDE */
+.right-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* LOGIN BOX */
+.login-box {
+    width: 100%;
+    max-width: 420px;
+    padding: 45px;
+    border-radius: 22px;
+    background: #ffffff;
+    color: #1f2937;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35), 0 5px 15px rgba(0,0,0,0.1);
+    animation: slideUp 0.8s ease;
+}
+
+/* TITLE */
+.login-title {
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+/* INPUT GROUP */
+.input-group-custom {
+    position: relative;
+}
+
+    .input-group-custom i {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 14px;
+    }
+
+/* INPUT */
+.form-control {
+    height: 52px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding-left: 42px;
+    font-size: 14px;
+    transition: all 0.25s ease;
+}
+
+    /* HOVER */
+    .form-control:hover {
+        border-color: #d1d5db;
+    }
+
+    /* FOCUS */
+    .form-control:focus {
+        border-color: #ff3b3b;
+        box-shadow: 0 0 0 3px rgba(255,59,59,0.15);
+    }
+
+/* PASSWORD ICON */
+.password-group {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #9ca3af;
+    transition: 0.25s;
+}
+
+    .toggle-password:hover {
+        color: #ff3b3b;
+    }
+
+/* BUTTON */
+.btn-login {
+    background: linear-gradient(135deg, #ff3b3b, #e11d48);
+    color: white;
+    height: 52px;
+    border-radius: 14px;
+    font-weight: bold;
+    border: none;
+    transition: all 0.25s ease;
+}
+
+    /* BUTTON HOVER */
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(255,59,59,0.25);
+    }
+
+    /* BUTTON ACTIVE */
+    .btn-login:active {
+        transform: scale(0.98);
+    }
+
+/* FOOTER */
+.footer-text {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+/* LINKS */
+a {
+    transition: 0.2s;
+}
+
+    a:hover {
+        opacity: 0.8;
+    }
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
+
+    body {
+        background: #111827;
+    }
+
+    .container-main {
+        flex-direction: column;
+    }
+
+    /* ‰Œ·Ì «·Ã“¡ «·‘„«· √’€— */
+    .left-side {
+        padding: 40px 20px 20px;
+        text-align: center;
+    }
+
+    .brand {
+        font-size: 26px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .features {
+        font-size: 14px;
+        line-height: 2;
+        margin-top: 20px;
+    }
+
+    /* «·ﬂ«—  */
+    .login-box {
+        margin: 20px;
+        padding: 30px 20px;
+        border-radius: 25px;
+    }
+
+    .login-title {
+        font-size: 22px;
+    }
+
+    .form-control {
+        height: 48px;
+    }
+
+    .btn-login {
+        height: 48px;
+    }
+}

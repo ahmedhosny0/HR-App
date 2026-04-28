@@ -1,0 +1,55 @@
+﻿@model List<HR_App.ViewModel.LeaveRequestVM>
+<link rel="stylesheet" type="text/css" href="/css/Evaluation.css" />
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet">
+<div class="container mt-5">
+    <div class="card p-4">
+        <h4 class="mb-4"><i class="bi bi-list"></i> طلباتي</h4>
+
+        <div id="reportArea">
+            <div class="card table-card">
+                <table id="example" class="table-modern">
+            <thead class="table-light">
+                <tr>
+                    <th>الموظف</th>
+                    <th>الوظيفه</th>
+                    <th>النموذج</th>
+                    <th>المدير</th>
+                    <th>من</th>
+                    <th>إلى</th>
+                    <th>ملاحظات</th>
+                    <th>رد المدير</th>
+                    <th>رد HR</th>
+                </tr>
+            </thead>
+           
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.EmployeeName</td>
+                        <td>@item.Job</td>
+                        <td>@item.ModelName</td>
+                        <td>@item.ManagerName</td>
+                        <td>@item.StartDate</td>
+                        <td>@item.EndDate</td>
+                        <td>@item.Notes</td>
+
+                        <td>
+                           @item.ManagerReply
+                        </td>
+
+                        <td>
+                            @item.HRReply
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+        </div>
+    </div>
+</div>

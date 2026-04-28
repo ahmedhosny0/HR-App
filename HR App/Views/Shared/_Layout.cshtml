@@ -1,0 +1,131 @@
+﻿@using System.Text.Json
+@addTagHelper*, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Circle K</title>
+    <!-- Google Font (أفضل خط عربي) -->
+    <link href="/css/lib/css2.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/layout.css" />
+    <script>
+        // تمييز الرابط النشط
+        document.addEventListener("DOMContentLoaded", function () {
+            let currentUrl = window.location.pathname.toLowerCase();
+            document.querySelectorAll(".nav-link").forEach(function (link) {
+                let linkUrl = link.getAttribute("href");
+                if (linkUrl && currentUrl === linkUrl.toLowerCase()) {
+                    link.classList.add("active");
+                }
+            });
+        });
+    </script>
+    <style>
+        #CreateEvaluation, #AllEvaluations{
+            display:none;
+        }
+       
+    </style>
+    <script>
+        var preventBack = @Html.Raw(Json.Serialize(ViewData["PreventBack"] ?? false));
+        if (preventBack) {
+            window.history.pushState(null, "", location.href);
+            window.onpopstate = function () { window.history.pushState(null, "", location.href); };
+        }
+    </script>
+</head>
+<body>
+    <div class="wrapper">
+
+        <!-- شريط التنقل -->
+        <nav class="main-header navbar">
+            <button class="navbar-toggler" id="navbarToggle" aria-label="Toggle navigation">&#9776;</button>
+
+            <div class="navbar-left" id="navbarLeft">
+@*                 <div class="nav-item dropdown">
+                    <a href="#" class="nav-link">التقييم</a>
+                    <div class="dropdown-menu">
+                        <a href="/Evaluation/Create" class="dropdown-item">إنشاء تقييم</a>
+                        <a href="/Evaluation/GetAllEvaluations" class="dropdown-item">كل التقييمات</a>
+                    </div>
+                </div> *@
+                <div class="nav-item ">
+                    <a href="/Leave/Create" id="" class="nav-link">تسجيل طلب</a>
+                </div>
+                <div class="nav-item ">
+                    <a href="/Leave/MyRequests" id="" class="nav-link">عرض الطلبات المسجله</a>
+                </div>
+            </div>
+
+            <div class="navbar-right" id="navbarRight">
+                <a href="/Home/Logout" class="nav-link">
+                    تسجيل الخروج
+                    <span class="usernametitle">@ViewBag.Username</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="content-wrapper">
+            @RenderBody()
+        </div>
+
+        <!-- الفوتر -->
+        <footer class="main-footer">
+            <strong>&copy; <span id="current-year"></span> Circle K .</strong> جميع الحقوق محفوظة.
+        </footer>
+    </div>
+    <script src="/js/lib/jquery-3.6.0.min.js"></script>
+
+    <script>
+                var username = '@ViewBag.Username';
+                var isUsername = '@ViewBag.isUsername';
+               var uuu = '@ViewBag.uuu';
+        var role = '@ViewBag.Role';
+                               $('#CreateEvaluation').hide();
+                               $('#AllEvaluations').hide();
+
+                       if (uuu === 'True' || isUsername === 'True') {
+                               $('#AllEvaluations').show();
+               }
+               else
+               {
+        $('#CreateEvaluation').show();
+                                      $('#AllEvaluations').show();
+               }
+                    if (!username || username.trim() === "") {
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'يجب تسجيل الدخول مرة أخرى',
+                confirmButtonText: 'تسجيل الدخول',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false,
+                timer: 6000,
+                timerProgressBar: true,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            }).then((result) => {
+
+                // لو ضغط الزر
+                if (result.isConfirmed) {
+                    window.location.href = "/Home/Logout";
+                }
+
+                // لو انتهى الوقت (6 ثواني)
+                if (result.dismiss === Swal.DismissReason.timer) {
+                    window.location.href = "/Home/Logout";
+                }
+
+            });
+
+        }
+        document.getElementById("current-year").textContent = new Date().getFullYear();
+    </script>
+    <script src="~/js/layout.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+https://github.com/ahmedhosny0/CircleK.git
+Scaffold-DbContext "Server=192.168.1.123;User ID=sa;Password=P@ssw0rd;Database=AXDB;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -Tables RETAILTRANSACTIONSALESTRANS,RetailTransactiontable,EcoResCategory
+
+Scaffold-DbContext "Server=192.168.1.156;User ID=sa;Password=P@ssw0rd;Database=DATA_CENTER;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Mode -Tables RptSalesAx,RptSales,Department,Item,TransactionEntry,Stores,RptSalesAxt,Supplier,RptSalesALL,TransactionView,RptStore,RptStoreAll,RptAXStore,SupplierPage,Rs,SalesPdf
+
+Scaffold-DbContext "Server=192.168.1.156;User ID=sa;Password=P@ssw0rd;Database=CKHelperdb;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Model -Tables RptStores,liststores,Helpersusers
+Scaffold-DbContext "Server=192.168.1.156;User ID=sa;Password=P@ssw0rd;Database=DATA_CENTER_Prev_Yrs;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Mode -Tables RptSales
+
+Scaffold-DbContext "Server=192.168.1.156;User ID=saApp;Password=P@ssw0rd;Database=CkproUsers;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Mod -Tables Users,Storeuser,RptUsers2,RptUsers
+
+Scaffold-DbContext "Server=192.168.1.210;User ID=sa;Password=P@ssw0rd;Database=AXDB;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Mod -Tables Inventtable,Ecoresproducttranslation,Ecoresproductcategory,Retailperiodicdiscount,Ecorescategory,Salesline,Pricedisctable,InventSum
+https://github.com/CircleKEgypt/CircleK.git
+
+Easysoft
+Scaffold-DbContext "Server=192.168.1.76\sql2016;User ID=mohamed;Password=P@ssw0rd12345;Database=Easysoft;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Mod -Tables Sales_Invoice,Sales_InvTrans
+
+//TopSoft
+Scaffold-DbContext "Server=192.168.1.208;User ID=sa;Password=P@ssw0rd123;Database=TopSoft;Connect Timeout=150;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Mod -Tables CloseDay,HSalesCode,DSalesCode,CustomerCode,AreaCode,ZoneCode,StreetCode,BranchData,BranchZone,DriverCode,ItemTransactionsCode,ItemCode,OrderedItemsPurchaseCode,ItemsPurchase,ItemsforOrder,CategoryCode,AttendanceDataCode,Maint_ExchangeItems,Maint_OutSideMaintenance,Maint_Company,Users,Storeuser,RptUsers2,RptUsers,CK_Items,CK_ItemBarcodes,CK_Coupons,CK_branch_evaluations,CK_evaluation_items,CK_evaluation_details,CK_Coupons_Users
+
+transaction from tenders(طلبات,مرصول)
+2023
+
+rowmaterial
+raw 
