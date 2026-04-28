@@ -283,10 +283,10 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
 
             using (SqlConnection con = new SqlConnection(connStr))
             {
-                string query = "SELECT * FROM RptModel WHERE EmployeeCode = @empId";
-
+                // يفضل جلب البيانات مرتبة حسب التاريخ
+                string query = "SELECT * FROM RptModel WHERE EmployeeCode = @empId ORDER BY FromDate DESC";
                 SqlCommand cmd = new SqlCommand(query, con);
-               cmd.Parameters.AddWithValue("@empId", ViewBag.UserName);
+                cmd.Parameters.AddWithValue("@empId", ViewBag.UserName);
                 con.Open();
                 SqlDataReader dr = cmd.ExecuteReader();
                 while (dr.Read())
@@ -299,16 +299,33 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                         ModelName = dr["ModelName"].ToString(),
                         EmployeeName = dr["EmployeeName"].ToString(),
                         Job = dr["EmployeeJob"].ToString(),
-                        RoleName = dr["RoleName"].ToString(),
                         EmployeeSerial = Convert.ToInt32(dr["EmployeeCode"]),
                         ManagerName = dr["ManagerName"].ToString(),
                         ManagerReply = dr["OrderStatus"].ToString(),
                         HRReply = dr["HROrderStatus"].ToString(),
-                        Notes = dr["Notes"].ToString(),
+                        Notes = dr["Notes"].ToString()
                     });
                 }
             }
+            // --- منطق التجميع الجديد ---
+            var monthlySummary = list.GroupBy(item => {
+                DateTime dt = DateTime.Parse(item.StartDate);
+                // إذا كان اليوم >= 22، ينتمي للشهر القادم إدارياً
+                DateTime reportDate = dt.Day >= 22 ? dt.AddMonths(1) : dt;
+                return new { reportDate.Year, reportDate.Month };
+            })
+            .Select(group => new {
+                PeriodTitle = $"شهر {group.Key.Month} / {group.Key.Year}",
+                // حساب عدد كل نموذج داخل هذه الفترة
+                ModelCounts = group.GroupBy(m => m.ModelName)
+                                   .Select(mc => new {
+                                       Name = mc.Key,
+                                       Count = mc.Count()
+                                   }).ToList()
+            })
+            .OrderByDescending(o => o.PeriodTitle).ToList();
 
+            ViewBag.Summary = monthlySummary;
             return View(list);
         }
 
