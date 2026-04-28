@@ -59,6 +59,7 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                     list.Add(new LeaveRequestVM
                     {
                         ModelSerial = Convert.ToInt32(dr["ModelSerial"]),
+                        EmployeeSerial = Convert.ToInt32(dr["EmployeeCode"]),
                         EmployeeName = dr["EmployeeName"].ToString(),
                         Job = dr["EmployeeJob"]?.ToString(),
                         FromDate = Convert.ToDateTime(dr["FromDate"]),
@@ -236,7 +237,7 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                 //}
                 //dr3.Close();
             }
-            if (model.EmployeeSerial>0)
+            if (model.ModelTypeSerial>0)
             {
                 try
                 {
@@ -299,6 +300,7 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                         EmployeeName = dr["EmployeeName"].ToString(),
                         Job = dr["EmployeeJob"].ToString(),
                         RoleName = dr["RoleName"].ToString(),
+                        EmployeeSerial = Convert.ToInt32(dr["EmployeeCode"]),
                         ManagerName = dr["ManagerName"].ToString(),
                         ManagerReply = dr["OrderStatus"].ToString(),
                         HRReply = dr["HROrderStatus"].ToString(),

@@ -91,11 +91,11 @@
                        if (role === 'Manager' || role === 'HeadOfficeHR' ||role==="HRandManager") {
                                $('#VOrderAction').show();
                }
-        //        else
-        //        {
-        // $('#CreateEvaluation').show();
-        //                               $('#AllEvaluations').show();
-        //        }
+               else
+               {
+                                       $('#VOrderAction').hide();
+
+               }
                     if (!username || username.trim() === "") {
 
             Swal.fire({

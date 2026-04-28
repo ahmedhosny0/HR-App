@@ -24,6 +24,7 @@
                     <thead>
                         <tr>
                             <th>الموظف</th>
+                            <th>الوظيفه</th>
                             <th>التاريخ</th>
                             <th>المدة</th>
                             <th>الملاحظات</th>
@@ -37,7 +38,10 @@
                             {
                                 <tr id="row-@item.ModelSerial">
                                     <td data-label="الموظف">
+                                        <div class="fw-bold">@item.EmployeeSerial</div>
                                         <div class="fw-bold">@item.EmployeeName</div>
+                                    </td>
+                                     <td data-label="الوظيفه">
                                         <div class="small text-muted">@item.Job</div>
                                     </td>
                                     <td data-label="التاريخ">

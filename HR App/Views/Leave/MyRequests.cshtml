@@ -21,6 +21,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>الموظف</th>
+                            <th>الوظيفه</th>
                             <th>النموذج</th>
                             <th>المدير المباشر</th>
                             <th>الفترة</th>
@@ -34,7 +35,10 @@
                         {
                             <tr>
                                 <td data-label="الموظف">
+                                    <div class="fw-bold">@item.EmployeeSerial</div>
                                     <div class="fw-bold">@item.EmployeeName</div>
+                                </td>
+                                <td data-label="الوظيفه">
                                     <small class="text-muted">@item.Job</small>
                                 </td>
                                 <td data-label="النموذج">
