@@ -22,7 +22,7 @@
         });
     </script>
     <style>
-        #CreateEvaluation, #AllEvaluations{
+        #VOrderAction {
             display:none;
         }
        
@@ -54,10 +54,10 @@
                     <a href="/Leave/Create" id="" class="nav-link">تسجيل طلب</a>
                 </div>
                 <div class="nav-item ">
-                    <a href="/Leave/ManagerRequests" id="" class="nav-link">طلبات الموظفين</a>
+                    <a href="/Leave/ManagerRequests" id="VOrderAction" class="nav-link">طلبات الموظفين</a>
                 </div>
                 <div class="nav-item ">
-                    <a href="/Leave/MyRequests" id="" class="nav-link">عرض الطلبات المسجله</a>
+                    <a href="/Leave/MyRequests" id="" class="nav-link">عرض طلباتي</a>
                 </div>
             </div>
 
@@ -85,17 +85,17 @@
                 var isUsername = '@ViewBag.isUsername';
                var uuu = '@ViewBag.uuu';
         var role = '@ViewBag.Role';
-                               $('#CreateEvaluation').hide();
-                               $('#AllEvaluations').hide();
+                               $('#VOrderAction').hide();
+                              
 
-                       if (role === 'Manger' || role === 'HR') {
-                               $('#AllEvaluations').show();
+                       if (role === 'Manager' || role === 'HeadOfficeHR' ||role==="HRandManager") {
+                               $('#VOrderAction').show();
                }
-               else
-               {
-        $('#CreateEvaluation').show();
-                                      $('#AllEvaluations').show();
-               }
+        //        else
+        //        {
+        // $('#CreateEvaluation').show();
+        //                               $('#AllEvaluations').show();
+        //        }
                     if (!username || username.trim() === "") {
 
             Swal.fire({

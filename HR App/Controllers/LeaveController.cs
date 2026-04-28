@@ -16,23 +16,40 @@ namespace HR_App.Controllers
         public IActionResult ManagerRequests()
         {
             // جلب ID المدير الحالي من الـ Session
-          //  var currentManagerId = HttpContext.Session.GetString("EmployeeId");
+            //  var currentManagerId = HttpContext.Session.GetString("EmployeeId");
 
             //if (string.IsNullOrEmpty(currentManagerId))
             //{
             //    return RedirectToAction("Login", "Login");
             //}
-
+           
             List<LeaveRequestVM> list = new List<LeaveRequestVM>();
 
             using (SqlConnection con = new SqlConnection(connStr))
             {
                 // نستخدم View أو Join لجلب أسماء الموظفين بدلاً من الأكواد فقط
                 string query = @"
-                  select * from RptModel where ManagerCode=@managerCode ";
-
+                  select * from RptModel ";
+                if (ViewBag.Role == "HeadOfficeHR")
+                {
+                    query += @"
+where ModelStatus='1'and  HRModelStatus='0' ";
+            }
+                if (ViewBag.Role == "Manager")
+                {
+                    query += @"
+where ManagerCode=@managerCode and ModelStatus='0' ";
+                }
+                if (ViewBag.Role == "HRandManager")
+                {
+                    query += @"
+where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
+                }
                 SqlCommand cmd = new SqlCommand(query, con);
+                if (ViewBag.Role == "Manager" || ViewBag.Role == "HRandManager")
+                {
                 cmd.Parameters.AddWithValue("@managerCode", ViewBag.UserName);
+                }
 
                 con.Open();
                 SqlDataReader dr = cmd.ExecuteReader();
@@ -56,17 +73,22 @@ namespace HR_App.Controllers
         // 4. إجراءات المدير (موافقة/رفض)
         // =========================
         [HttpPost]
-        public IActionResult ApproveByManager(int id)
+        public IActionResult ProcessLeaveRequest(int id, int status, string reason)
         {
-            UpdateStatus(id, 1, null, null); // للموافقة لا نغير الملاحظات الأصلية غالباً
-            return Ok();
-        }
+            // نفترض أن الدور مخزن في ViewBag أو نمرره من الصفحة
+            string userRole = ViewBag.Role; // 'Manager' أو 'HR'
 
-        [HttpPost]
-        public IActionResult RejectByManager(int id, string reason)
-        {
-            // نمرر سبب الرفض ليتم حفظه في عمود الـ Notes
-            UpdateStatus(id, 2, null, reason);
+            if (userRole == "Manager")
+            {
+                // تحديث حالة المدير (status: 1 موافقة، 2 رفض)
+                UpdateStatus(id, status, null, reason);
+            }
+            else if (userRole == "HeadOfficeHR")
+            {
+                // تحديث حالة الـ HR
+                UpdateStatus(id, null, status, reason);
+            }
+
             return Ok();
         }
 
@@ -123,34 +145,34 @@ namespace HR_App.Controllers
                 }
                 dr1.Close();
 
-                // 👇 الموظفين
-                string q2 = "SELECT EmployeeSerial, EmployeeName FROM EmployeeCode";
-                SqlCommand cmd2 = new SqlCommand(q2, con);
-                SqlDataReader dr2 = cmd2.ExecuteReader();
+            //    // 👇 الموظفين
+            //    string q2 = "SELECT EmployeeSerial, EmployeeName FROM EmployeeCode";
+            //    SqlCommand cmd2 = new SqlCommand(q2, con);
+            //    SqlDataReader dr2 = cmd2.ExecuteReader();
 
-                while (dr2.Read())
-                {
-                    vm.Employees.Add(new SelectListItem
-                    {
-                        Value = dr2["EmployeeSerial"].ToString(),
-                        Text = dr2["EmployeeName"].ToString()
-                    });
-                }
-                dr2.Close();
-                // 👇 الموظفين
-                string q3 = "SELECT * FROM EmployeeCode where IsManager=1";
-                SqlCommand cmd3 = new SqlCommand(q2, con);
-                SqlDataReader dr3 = cmd2.ExecuteReader();
+            //    while (dr2.Read())
+            //    {
+            //        vm.Employees.Add(new SelectListItem
+            //        {
+            //            Value = dr2["EmployeeSerial"].ToString(),
+            //            Text = dr2["EmployeeName"].ToString()
+            //        });
+            //    }
+            //    dr2.Close();
+            //    // 👇 الموظفين
+            //    string q3 = "SELECT * FROM EmployeeCode where IsManager=1";
+            //    SqlCommand cmd3 = new SqlCommand(q2, con);
+            //    SqlDataReader dr3 = cmd2.ExecuteReader();
 
-                while (dr3.Read())
-                {
-                    vm.Managers.Add(new SelectListItem
-                    {
-                        Value = dr3["EmployeeSerial"].ToString(),
-                        Text = dr3["EmployeeName"].ToString()
-                    });
-                }
-                dr3.Close();
+            //    while (dr3.Read())
+            //    {
+            //        vm.Managers.Add(new SelectListItem
+            //        {
+            //            Value = dr3["EmployeeSerial"].ToString(),
+            //            Text = dr3["EmployeeName"].ToString()
+            //        });
+            //    }
+            //    dr3.Close();
             }
 
             return View(vm);
@@ -185,34 +207,34 @@ namespace HR_App.Controllers
                 }
                 dr1.Close();
 
-                // 👇 الموظفين
-                string q2 = "SELECT EmployeeSerial, EmployeeName FROM EmployeeCode";
-                SqlCommand cmd2 = new SqlCommand(q2, con);
-                SqlDataReader dr2 = cmd2.ExecuteReader();
+                //// 👇 الموظفين
+                //string q2 = "SELECT EmployeeSerial, EmployeeName FROM EmployeeCode";
+                //SqlCommand cmd2 = new SqlCommand(q2, con);
+                //SqlDataReader dr2 = cmd2.ExecuteReader();
 
-                while (dr2.Read())
-                {
-                    vm.Employees.Add(new SelectListItem
-                    {
-                        Value = dr2["EmployeeSerial"].ToString(),
-                        Text = dr2["EmployeeName"].ToString()
-                    });
-                }
-                dr2.Close();
-                // 👇 الموظفين
-                string q3 = "SELECT * FROM EmployeeCode where IsManager=1";
-                SqlCommand cmd3 = new SqlCommand(q2, con);
-                SqlDataReader dr3 = cmd2.ExecuteReader();
+                //while (dr2.Read())
+                //{
+                //    vm.Employees.Add(new SelectListItem
+                //    {
+                //        Value = dr2["EmployeeSerial"].ToString(),
+                //        Text = dr2["EmployeeName"].ToString()
+                //    });
+                //}
+                //dr2.Close();
+                //// 👇 الموظفين
+                //string q3 = "SELECT * FROM EmployeeCode where IsManager=1";
+                //SqlCommand cmd3 = new SqlCommand(q2, con);
+                //SqlDataReader dr3 = cmd2.ExecuteReader();
 
-                while (dr3.Read())
-                {
-                    vm.Managers.Add(new SelectListItem
-                    {
-                        Value = dr3["EmployeeSerial"].ToString(),
-                        Text = dr3["EmployeeName"].ToString()
-                    });
-                }
-                dr3.Close();
+                //while (dr3.Read())
+                //{
+                //    vm.Managers.Add(new SelectListItem
+                //    {
+                //        Value = dr3["EmployeeSerial"].ToString(),
+                //        Text = dr3["EmployeeName"].ToString()
+                //    });
+                //}
+                //dr3.Close();
             }
             if (model.EmployeeSerial>0)
             {
@@ -228,7 +250,7 @@ namespace HR_App.Controllers
 
                         SqlCommand cmd = new SqlCommand(query, con);
                         cmd.Parameters.AddWithValue("@ModelTypeSerial", model.ModelTypeSerial);
-                        cmd.Parameters.AddWithValue("@EmployeeSerial", model.EmployeeSerial);
+                        cmd.Parameters.AddWithValue("@EmployeeSerial", ViewBag.UserName);
                         //cmd.Parameters.AddWithValue("@ManagerSerial", model.ManagerSerial);
                         cmd.Parameters.AddWithValue("@Notes", model.Notes ?? "");
                         cmd.Parameters.AddWithValue("@FromDate", model.FromDate);

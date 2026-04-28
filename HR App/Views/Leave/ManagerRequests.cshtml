@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "طلبات الموظفين";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -53,10 +55,11 @@
                                     </td>
                                     <td data-label="الإجراء" class="text-center">
                                         <div class="mobile-btn-group">
-                                            <button onclick="processRequest(@item.ModelSerial, 'ApproveByManager')" class="btn btn-success btn-sm px-3">
+                                            <button onclick="processRequest(@item.ModelSerial, 'approve')" class="btn btn-success btn-sm px-3">
                                                 <i class="bi bi-check-lg"></i> موافقة
                                             </button>
-                                            <button onclick="processRequest(@item.ModelSerial, 'RejectByManager')" class="btn btn-danger btn-sm px-3">
+
+                                            <button onclick="processRequest(@item.ModelSerial, 'reject')" class="btn btn-danger btn-sm px-3">
                                                 <i class="bi bi-x-lg"></i> رفض
                                             </button>
                                         </div>
@@ -84,9 +87,11 @@
 <script src="/lib/jquery/dist/jquery.min.js"></script>
 
 <script>
-    function processRequest(id, actionName) {
-        const isReject = actionName === 'RejectByManager';
+    function processRequest(id, type) {
+        // type ممكن يكون 'approve' أو 'reject'
+        const isReject = type === 'reject';
         const title = isReject ? 'سبب الرفض' : 'موافقة على الطلب';
+        const statusValue = isReject ? 2 : 1; // 1 للموافقة و 2 للرفض
 
         Swal.fire({
             title: title,
@@ -103,15 +108,22 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/Leave/${actionName}`,
+                    // تأكد من اسم الـ Controller الصحيح هنا (مثلاً Leave)
+                    url: '/Leave/ProcessLeaveRequest',
                     type: 'POST',
-                    data: { id: id, reason: result.value || "" },
+                    data: {
+                        id: id,
+                        status: statusValue,
+                        reason: result.value || ""
+                    },
                     success: function () {
-                        Swal.fire('تم!', 'تم التحديث بنجاح', 'success');
+                        Swal.fire('تم!', 'تم تحديث حالة الطلب.', 'success');
                         $(`#row-${id}`).fadeOut();
+                    },
+                    error: function () {
+                        Swal.fire('خطأ!', 'فشل في تحديث البيانات.', 'error');
                     }
                 });
             }
         });
-    }
-</script>
+    }</script>
