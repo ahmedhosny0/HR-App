@@ -87,15 +87,14 @@
         var role = '@ViewBag.Role';
                                $('#VOrderAction').hide();
                               
+                            if( role != 'Manager' && role != 'HeadOfficeHR' && role!= "HRandManager" && role != 'Employee'){
+            window.location.href = "/Home/Logout";
+        }
 
-                       if (role === 'Manager' || role === 'HeadOfficeHR' ||role==="HRandManager") {
+                       else if  (role === 'Manager' || role === 'HeadOfficeHR' ||role==="HRandManager") {
                                $('#VOrderAction').show();
                }
-               else
-               {
-                                       $('#VOrderAction').hide();
-
-               }
+              
                     if (!username || username.trim() === "") {
 
             Swal.fire({

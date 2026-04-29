@@ -268,6 +268,7 @@ namespace CK.Controllers
         [HttpPost]
         public async Task<IActionResult> Login( VMLogin modellogin)
         {
+            
             if (string.IsNullOrWhiteSpace(modellogin.username) || string.IsNullOrWhiteSpace(modellogin.Password))
             {
                 TempData["ValidateMessage"] = "Username and password are required.";
@@ -297,6 +298,14 @@ namespace CK.Controllers
                 var username = authenticatedUser.Username;
                 var username2 = authenticatedUser.Username2;
                 var role = authenticatedUser.Role;
+                var allowedRoles = new[] { "Manager", "HeadOfficeHR", "HRandManager", "Employee" };
+
+                if (string.IsNullOrEmpty(role) || !allowedRoles.Contains(role))
+                {
+                    // بدلاً من Logout، سنرسل متغير للـ View يخبره أن الصلاحية مرفوضة
+                    ViewBag.NoRole = "V";
+                    return View("Login");
+                }
                 bool isDmanager = db2.RptUsers.Any(s => s.Dmanager == username);
                 bool isUsername = db2.RptUsers.Any(s => s.Username == username && (s.Role == " " || s.Role == null) && (s.Storenumber != null || s.Storenumber != " "));
                 string isuser = Convert.ToString(isUsername);

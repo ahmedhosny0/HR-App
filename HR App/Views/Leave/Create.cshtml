@@ -63,34 +63,40 @@
 <script src="/js/lib/sweetalert2@11.js"></script>
 
 <script>
+
     $(document).ready(function () {
-        // // تفعيل Select2
-        // $('.select2').select2({
-        //     theme: 'bootstrap-5', // إذا كنت تستخدم ثيم بوتستراب
-        //     width: '100%',
-        //     dir: "rtl"
-        // });
 
-        // // تصحيح فوكس البحث في Select2
-        // $(document).on('select2:open', () => {
-        //     setTimeout(() => document.querySelector('.select2-search__field').focus(), 50);
-        // });
+    $('#leaveForm').on('submit', function(e) {
+        let fromVal = $('#FromDate').val();
+        let toVal = $('#ToDate').val();
+        let typeVal = $('select[name="ModelTypeSerial"]').val();
 
-        // منع إرسال تواريخ خاطئة
-        $('#leaveForm').on('submit', function(e) {
-            let from = new Date($('#FromDate').val());
-            let to = new Date($('#ToDate').val());
+        let fromDate = new Date(fromVal);
+        let toDate = new Date(toVal);
+        let now = new Date();
 
-            if (to < from) {
+        // 1. فحص التواريخ المنطقية
+        if (toDate < fromDate) {
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'خطأ', text: 'تاريخ النهاية قبل البداية!' });
+            return;
+        }
+
+        // 2. فحص الـ 48 ساعة للإجازة الاعتيادي (Client-side)
+        // استبدل رقم "1" بالرقم الفعلي للاعتيادي عندك
+        if (typeVal == "1") {
+            let diffInHours = (fromDate - now) / (1000 * 60 * 60);
+            if (diffInHours < 48) {
                 e.preventDefault();
                 Swal.fire({
-                    icon: 'error',
-                    title: 'خطأ في التاريخ',
-                    text: 'تاريخ النهاية لا يمكن أن يكون قبل تاريخ البداية!',
-                    confirmButtonText: 'مفهوم'
+                    icon: 'warning',
+                    title: 'تنبيه زمني',
+                    text: 'الاعتيادي يتطلب التقديم قبل الموعد بـ 48 ساعة عمل.'
                 });
+                return;
             }
-        });
+        }
+    });
 
         // رسائل النجاح والخطأ من السيرفر
         var success = '@Html.Raw(TempData["SuccessMessage"])';

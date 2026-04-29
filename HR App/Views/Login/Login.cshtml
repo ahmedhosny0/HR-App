@@ -127,11 +127,13 @@
     <script src="/js/lib/sweetalert2@11.js"></script>
     <script src="~/js/site.js"></script>
     <script src="/js/lib/bootstrap.bundle.min.js"></script>
+    
     <script>
         $(document).ready(function () {
                   var Usererror = "@Html.Raw(ViewBag.Usererror ?? "")";
         var Emptydata = "@Html.Raw(ViewBag.Emptydata ?? "")";
         var u = "@Html.Raw(ViewBag.u ?? "")";
+                    var NoRole = "@Html.Raw(ViewBag.NoRole ?? "")"; // أضف هذا السطر
 
             console.log("Usererror is: [" + Usererror + "]");
             console.log("Emptydata is: [" + Emptydata + "]");
@@ -143,7 +145,18 @@
                     text: "خطأ في إسم المستخدم أو كلمة السر",
                     timer: 5500
                 });
-            } else if (Emptydata === "V") {
+            }
+                        // رسالة عدم وجود صلاحية (الإضافة الجديدة)
+            else if (NoRole === "V") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Access Denied",
+                    text: "عذراً، ليس لديك صلاحية للدخول إلى هذا النظام. يرجى التواصل مع الإدارة.",
+                    confirmButtonColor: "#ff3b3b",
+                    timer: 7000
+                });
+            }
+            else if (Emptydata === "V") {
                 Swal.fire({
                     icon: "error",
                     title: "Oops...",

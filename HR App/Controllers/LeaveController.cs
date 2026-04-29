@@ -61,6 +61,7 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                         ModelSerial = Convert.ToInt32(dr["ModelSerial"]),
                         EmployeeSerial = Convert.ToInt32(dr["EmployeeCode"]),
                         EmployeeName = dr["EmployeeName"].ToString(),
+                        ModelName = dr["ModelName"].ToString(),
                         Job = dr["EmployeeJob"]?.ToString(),
                         FromDate = Convert.ToDateTime(dr["FromDate"]),
                         ToDate = Convert.ToDateTime(dr["ToDate"]),
@@ -180,6 +181,7 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
         }
 
         [HttpPost]
+        [HttpPost]
         public IActionResult Create(LeaveRequestVM model)
         {
             LeaveRequestVM vm = new LeaveRequestVM
@@ -189,15 +191,13 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                 Managers = new List<SelectListItem>()
             };
 
+            // هذا الجزء لجلب البيانات للقوائم المنسدلة في حالة حدوث خطأ أو إعادة عرض الصفحة
             using (SqlConnection con = new SqlConnection(connStr))
             {
                 con.Open();
-
-                // 👇 نوع الإجازة
                 string q1 = "SELECT ModelTypeSerial, ModelName FROM ModelTypeCode";
                 SqlCommand cmd1 = new SqlCommand(q1, con);
                 SqlDataReader dr1 = cmd1.ExecuteReader();
-
                 while (dr1.Read())
                 {
                     vm.LeaveTypes.Add(new SelectListItem
@@ -207,73 +207,74 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                     });
                 }
                 dr1.Close();
+            } // هنا سيتم إغلاق الاتصال تلقائياً بفضل using
 
-                //// 👇 الموظفين
-                //string q2 = "SELECT EmployeeSerial, EmployeeName FROM EmployeeCode";
-                //SqlCommand cmd2 = new SqlCommand(q2, con);
-                //SqlDataReader dr2 = cmd2.ExecuteReader();
-
-                //while (dr2.Read())
-                //{
-                //    vm.Employees.Add(new SelectListItem
-                //    {
-                //        Value = dr2["EmployeeSerial"].ToString(),
-                //        Text = dr2["EmployeeName"].ToString()
-                //    });
-                //}
-                //dr2.Close();
-                //// 👇 الموظفين
-                //string q3 = "SELECT * FROM EmployeeCode where IsManager=1";
-                //SqlCommand cmd3 = new SqlCommand(q2, con);
-                //SqlDataReader dr3 = cmd2.ExecuteReader();
-
-                //while (dr3.Read())
-                //{
-                //    vm.Managers.Add(new SelectListItem
-                //    {
-                //        Value = dr3["EmployeeSerial"].ToString(),
-                //        Text = dr3["EmployeeName"].ToString()
-                //    });
-                //}
-                //dr3.Close();
-            }
-            if (model.ModelTypeSerial>0)
+            if (model.ModelTypeSerial > 0)
             {
                 try
                 {
                     using (SqlConnection con = new SqlConnection(connStr))
                     {
-                        string query = @"
-            INSERT INTO ModelCode
-            (ModelTypeSerial, EmployeeSerial, ModelStatus, HRModelStatus, Notes, FromDate, ToDate, CreatedDate,CreatedUser)
-            VALUES
-            (@ModelTypeSerial, @EmployeeSerial, 0, 0, @Notes, @FromDate, @ToDate, GETDATE(),@CreatedUser)";
+                        con.Open(); // فتح الاتصال (مرة واحدة فقط)
 
-                        SqlCommand cmd = new SqlCommand(query, con);
+                        // --- 1. التحقق من تكرار الطلب في نفس اليوم ---
+                        string checkQuery = @"SELECT COUNT(*) FROM ModelCode 
+                                    WHERE EmployeeSerial = @EmpSerial 
+                                    AND CAST(FromDate AS DATE) = CAST(@RequestDate AS DATE)";
+
+                        SqlCommand checkCmd = new SqlCommand(checkQuery, con);
+                        checkCmd.Parameters.AddWithValue("@EmpSerial", ViewBag.UserName);
+                        checkCmd.Parameters.AddWithValue("@RequestDate", model.FromDate);
+
+                        int existingRequests = (int)checkCmd.ExecuteScalar();
+                        if (existingRequests > 0)
+                        {
+                            TempData["ErrorMessage"] = "عذراً! لديك طلب مسجل بالفعل في هذا التاريخ ❌";
+                            return RedirectToAction("Create");
+                        }
+
+                        // --- 2. التحقق من شرط الـ 48 ساعة للإجازة الاعتيادي ---
+                        if (model.ModelTypeSerial == 1) // تأكد من أن 1 هو رقم الاعتيادي عندك
+                        {
+                            DateTime now = DateTime.Now;
+                            TimeSpan difference = model.FromDate - now;
+
+                            if (difference.TotalHours < 48)
+                            {
+                                TempData["ErrorMessage"] = "يجب تقديم طلب الإجازة الاعتيادي قبل موعدها بـ 48 ساعة عمل على الأقل ⏳";
+                                return RedirectToAction("Create");
+                            }
+                        }
+
+                        // --- 3. عملية الحفظ ---
+                        string insertQuery = @"
+                    INSERT INTO ModelCode
+                    (ModelTypeSerial, EmployeeSerial, ModelStatus, HRModelStatus, Notes, FromDate, ToDate, CreatedDate, CreatedUser)
+                    VALUES
+                    (@ModelTypeSerial, @EmployeeSerial, 0, 0, @Notes, @FromDate, @ToDate, GETDATE(), @CreatedUser)";
+
+                        SqlCommand cmd = new SqlCommand(insertQuery, con);
                         cmd.Parameters.AddWithValue("@ModelTypeSerial", model.ModelTypeSerial);
                         cmd.Parameters.AddWithValue("@EmployeeSerial", ViewBag.UserName);
-                        //cmd.Parameters.AddWithValue("@ManagerSerial", model.ManagerSerial);
                         cmd.Parameters.AddWithValue("@Notes", model.Notes ?? "");
                         cmd.Parameters.AddWithValue("@FromDate", model.FromDate);
                         cmd.Parameters.AddWithValue("@ToDate", model.ToDate);
                         cmd.Parameters.AddWithValue("@CreatedUser", ViewBag.Username);
 
-                        con.Open();
+                        // تم حذف con.Open() المكررة التي كانت هنا وتسبب الخطأ
                         cmd.ExecuteNonQuery();
                     }
 
                     TempData["SuccessMessage"] = "تم الحفظ بنجاح ✅";
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     TempData["ErrorMessage"] = "حدث خطأ أثناء الحفظ ❌";
                 }
-
             }
 
-            return RedirectToAction("Create") ;
+            return RedirectToAction("Create");
         }
-
         // =========================
         // Employee Requests
         // =========================
