@@ -61,44 +61,59 @@
 <script src="/js/lib/jquery-3.6.0.min.js"></script>
 <script src="/js/lib/select2.min.js"></script>
 <script src="/js/lib/sweetalert2@11.js"></script>
-
 <script>
-
     $(document).ready(function () {
+        // دالة مساعدة لحساب أيام العمل (تتجاهل الجمعة والسبت)
+        function getWorkDaysBetween(start, end) {
+            let count = 0;
+            let curDate = new Date(start.getTime());
+            curDate.setDate(curDate.getDate() + 1); // نبدأ الحساب من اليوم التالي للتقديم
 
-    $('#leaveForm').on('submit', function(e) {
-        let fromVal = $('#FromDate').val();
-        let toVal = $('#ToDate').val();
-        let typeVal = $('select[name="ModelTypeSerial"]').val();
-
-        let fromDate = new Date(fromVal);
-        let toDate = new Date(toVal);
-        let now = new Date();
-
-        // 1. فحص التواريخ المنطقية
-        if (toDate < fromDate) {
-            e.preventDefault();
-            Swal.fire({ icon: 'error', title: 'خطأ', text: 'تاريخ النهاية قبل البداية!' });
-            return;
+            while (curDate < end) {
+                let dayOfWeek = curDate.getDay();
+                // في JavaScript: 5 هو الجمعة، 6 هو السبت
+                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                    count++;
+                }
+                curDate.setDate(curDate.getDate() + 1);
+            }
+            return count;
         }
 
-        // 2. فحص الـ 48 ساعة للإجازة الاعتيادي (Client-side)
-        // استبدل رقم "1" بالرقم الفعلي للاعتيادي عندك
-        if (typeVal == "1") {
-            let diffInHours = (fromDate - now) / (1000 * 60 * 60);
-            if (diffInHours < 48) {
+        $('#leaveForm').on('submit', function(e) {
+            let fromVal = $('#FromDate').val();
+            let toVal = $('#ToDate').val();
+            let typeVal = $('select[name="ModelTypeSerial"]').val();
+
+            let fromDate = new Date(fromVal);
+            let toDate = new Date(toVal);
+            let now = new Date();
+            now.setHours(0, 0, 0, 0); // تصفير الوقت للمقارنة بالتواريخ فقط
+
+            // 1. فحص التواريخ المنطقية
+            if (toDate < fromDate) {
                 e.preventDefault();
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'تنبيه زمني',
-                    text: 'الاعتيادي يتطلب التقديم قبل الموعد بـ 48 ساعة عمل.'
-                });
+                Swal.fire({ icon: 'error', title: 'خطأ', text: 'تاريخ النهاية قبل البداية!' });
                 return;
             }
-        }
-    });
 
-        // رسائل النجاح والخطأ من السيرفر
+            // 2. فحص الـ 48 ساعة عمل للإجازة الاعتيادي
+            if (typeVal == "1") { // تأكد أن 1 هو رقم الاعتيادي
+                let workDays = getWorkDaysBetween(now, fromDate);
+
+                if (workDays < 2) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه أيام العمل',
+                        text: 'الإجازة الاعتيادي تتطلب التقديم قبل الموعد بيومي عمل على الأقل (خارج أيام العطلات).'
+                    });
+                    return;
+                }
+            }
+        });
+
+        // رسائل النجاح والخطأ من السيرفر (تبقى كما هي)
         var success = '@Html.Raw(TempData["SuccessMessage"])';
         var error = '@Html.Raw(TempData["ErrorMessage"])';
 
@@ -106,7 +121,6 @@
             Swal.fire({ icon: 'success', title: 'تم!', text: success, confirmButtonText: 'حسناً' })
                 .then(() => {
                     $('#leaveForm')[0].reset();
-                    $('.select2').val(null).trigger('change');
                 });
         }
 

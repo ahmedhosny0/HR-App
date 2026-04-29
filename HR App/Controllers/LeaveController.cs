@@ -118,7 +118,20 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                 cmd.ExecuteNonQuery();
             }
         }
-
+        // دالة لحساب عدد أيام العمل بين تاريخين
+        private int GetWorkDays(DateTime start, DateTime end)
+        {
+            int workDays = 0;
+            // نبدأ من اليوم التالي للحظة التقديم وحتى يوم بداية الإجازة
+            for (var date = start.Date.AddDays(1); date < end.Date; date = date.AddDays(1))
+            {
+                if (date.DayOfWeek != DayOfWeek.Friday && date.DayOfWeek != DayOfWeek.Saturday)
+                {
+                    workDays++;
+                }
+            }
+            return workDays;
+        }
         public IActionResult Create()
         {
             LeaveRequestVM vm = new LeaveRequestVM
@@ -181,7 +194,6 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
         }
 
         [HttpPost]
-        [HttpPost]
         public IActionResult Create(LeaveRequestVM model)
         {
             LeaveRequestVM vm = new LeaveRequestVM
@@ -232,16 +244,20 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
                             TempData["ErrorMessage"] = "عذراً! لديك طلب مسجل بالفعل في هذا التاريخ ❌";
                             return RedirectToAction("Create");
                         }
-
-                        // --- 2. التحقق من شرط الـ 48 ساعة للإجازة الاعتيادي ---
-                        if (model.ModelTypeSerial == 1) // تأكد من أن 1 هو رقم الاعتيادي عندك
+                        // --- 2. التحقق من شرط الـ 48 ساعة عمل للإجازة الاعتيادي ---
+                        if (model.ModelTypeSerial == 1) // رقم الاعتيادي
                         {
                             DateTime now = DateTime.Now;
-                            TimeSpan difference = model.FromDate - now;
+                            DateTime requestStart = model.FromDate;
 
-                            if (difference.TotalHours < 48)
+                            // حساب عدد أيام العمل الفاصلة
+                            int workDaysBetween = GetWorkDays(now, requestStart);
+
+                            // التحقق: إذا قدم اليوم، يجب أن يمر يومي عمل (مثلاً يقدم الثلاثاء لتبدأ الأحد)
+                            // أو ببساطة: يجب أن يكون هناك يومين عمل كاملين على الأقل بين اللحظة الحالية وبداية الإجازة
+                            if (workDaysBetween < 2)
                             {
-                                TempData["ErrorMessage"] = "يجب تقديم طلب الإجازة الاعتيادي قبل موعدها بـ 48 ساعة عمل على الأقل ⏳";
+                                TempData["ErrorMessage"] = "يجب تقديم طلب الإجازة الاعتيادي قبل موعدها بيومي عمل على الأقل (الأحد - الخميس) ⏳";
                                 return RedirectToAction("Create");
                             }
                         }
