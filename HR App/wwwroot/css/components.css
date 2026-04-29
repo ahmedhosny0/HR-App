@@ -173,6 +173,17 @@
         color: #fff;
     }
 }
+#selectedDaysPreview span {
+    background: #0d6efd;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+}
+
+
 /* تحسين شكل الجدول في الموبايل */
 @media (max-width: 768px) {
     .table-modern thead {
@@ -227,8 +238,24 @@
         .mobile-btn-group .btn {
             flex: 1; /* جعل الأزرار تأخذ عرض متساوي في الموبايل */
         }
-}
 
+}
+@media (max-width: 768px) {
+    #SelectedDays {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    #selectedDaysPreview {
+        justify-content: flex-start;
+    }
+
+    .form-control {
+        min-width: 100% !important;
+        width: 100% !important;
+        font-size: 14px;
+    }
+}
 /* تنسيق عام بسيط */
 .table-modern td div {
     line-height: 1.4;

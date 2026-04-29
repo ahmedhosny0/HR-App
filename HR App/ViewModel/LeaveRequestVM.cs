@@ -5,7 +5,8 @@ namespace HR_App.ViewModel
     public class LeaveRequestVM
     {
         public int ModelSerial { get; set; }
-
+        public string SelectedDays { get; set; }
+        public bool IsMultipleDays { get; set; }
         public int EmployeeSerial { get; set; }   // 👈 المختار
         public int ManagerSerial { get; set; }
 

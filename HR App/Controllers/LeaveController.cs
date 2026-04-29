@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace HR_App.Controllers
 {
@@ -196,96 +197,233 @@ where ManagerCode=@managerCode and ModelStatus='1' and  HRModelStatus='0'  ";
         [HttpPost]
         public IActionResult Create(LeaveRequestVM model)
         {
-            LeaveRequestVM vm = new LeaveRequestVM
-            {
-                LeaveTypes = new List<SelectListItem>(),
-                Employees = new List<SelectListItem>(),
-                Managers = new List<SelectListItem>()
-            };
-
-            // هذا الجزء لجلب البيانات للقوائم المنسدلة في حالة حدوث خطأ أو إعادة عرض الصفحة
-            using (SqlConnection con = new SqlConnection(connStr))
-            {
-                con.Open();
-                string q1 = "SELECT ModelTypeSerial, ModelName FROM ModelTypeCode";
-                SqlCommand cmd1 = new SqlCommand(q1, con);
-                SqlDataReader dr1 = cmd1.ExecuteReader();
-                while (dr1.Read())
-                {
-                    vm.LeaveTypes.Add(new SelectListItem
-                    {
-                        Value = dr1["ModelTypeSerial"].ToString(),
-                        Text = dr1["ModelName"].ToString()
-                    });
-                }
-                dr1.Close();
-            } // هنا سيتم إغلاق الاتصال تلقائياً بفضل using
 
             if (model.ModelTypeSerial > 0)
             {
-                try
+                if (model.IsMultipleDays && !string.IsNullOrEmpty(model.SelectedDays))
                 {
+                    List<string> insertedDays = new List<string>();
+                    List<string> duplicateDays = new List<string>();
+
+                    // ✅ Parse + تنظيف + إزالة التكرار
+                    var dates = model.SelectedDays
+                        .Split(',')
+                        .Select(d => DateTime.ParseExact(d.Trim(), "yyyy-MM-dd", null).Date)
+                        .Distinct()
+                        .ToList();
+
                     using (SqlConnection con = new SqlConnection(connStr))
                     {
-                        con.Open(); // فتح الاتصال (مرة واحدة فقط)
+                        con.Open();
 
-                        // --- 1. التحقق من تكرار الطلب في نفس اليوم ---
-                        string checkQuery = @"SELECT COUNT(*) FROM ModelCode 
-                                    WHERE EmployeeSerial = @EmpSerial 
-                                    AND CAST(FromDate AS DATE) = CAST(@RequestDate AS DATE)";
+                        // ✅ 1. نجيب كل الأيام الموجودة مرة واحدة (Performance 🔥)
+                        var paramNames = dates.Select((d, i) => "@d" + i).ToList();
+
+                        string checkQuery = $@"
+            SELECT CAST(FromDate AS DATE)
+            FROM ModelCode
+            WHERE EmployeeSerial = @EmpSerial
+            AND CAST(FromDate AS DATE) IN ({string.Join(",", paramNames)})";
 
                         SqlCommand checkCmd = new SqlCommand(checkQuery, con);
                         checkCmd.Parameters.AddWithValue("@EmpSerial", ViewBag.UserName);
-                        checkCmd.Parameters.AddWithValue("@RequestDate", model.FromDate);
 
-                        int existingRequests = (int)checkCmd.ExecuteScalar();
-                        if (existingRequests > 0)
+                        for (int i = 0; i < dates.Count; i++)
                         {
-                            TempData["ErrorMessage"] = "عذراً! لديك طلب مسجل بالفعل في هذا التاريخ ❌";
-                            return RedirectToAction("Create");
+                            checkCmd.Parameters.AddWithValue(paramNames[i], dates[i]);
                         }
-                        // --- 2. التحقق من شرط الـ 48 ساعة عمل للإجازة الاعتيادي ---
-                        if (model.ModelTypeSerial == 1) // رقم الاعتيادي
+
+                        HashSet<DateTime> existingDates = new HashSet<DateTime>();
+
+                        using (var reader = checkCmd.ExecuteReader())
                         {
-                            DateTime now = DateTime.Now;
-                            DateTime requestStart = model.FromDate;
-
-                            // حساب عدد أيام العمل الفاصلة
-                            int workDaysBetween = GetWorkDays(now, requestStart);
-
-                            // التحقق: إذا قدم اليوم، يجب أن يمر يومي عمل (مثلاً يقدم الثلاثاء لتبدأ الأحد)
-                            // أو ببساطة: يجب أن يكون هناك يومين عمل كاملين على الأقل بين اللحظة الحالية وبداية الإجازة
-                            if (workDaysBetween < 2)
+                            while (reader.Read())
                             {
-                                TempData["ErrorMessage"] = "يجب تقديم طلب الإجازة الاعتيادي قبل موعدها بيومي عمل على الأقل (الأحد - الخميس) ⏳";
-                                return RedirectToAction("Create");
+                                existingDates.Add(reader.GetDateTime(0).Date);
                             }
                         }
 
-                        // --- 3. عملية الحفظ ---
+                        // ✅ 2. Prepare Insert Command (مرة واحدة)
                         string insertQuery = @"
-                    INSERT INTO ModelCode
-                    (ModelTypeSerial, EmployeeSerial, ModelStatus, HRModelStatus, Notes, FromDate, ToDate, CreatedDate, CreatedUser)
-                    VALUES
-                    (@ModelTypeSerial, @EmployeeSerial, 0, 0, @Notes, @FromDate, @ToDate, GETDATE(), @CreatedUser)";
+            INSERT INTO ModelCode
+            (ModelTypeSerial, EmployeeSerial, ModelStatus, HRModelStatus, Notes, FromDate, ToDate, CreatedDate, CreatedUser)
+            VALUES
+            (@ModelTypeSerial, @EmployeeSerial, 0, 0, @Notes, @Date, @Date, GETDATE(), @CreatedUser)";
 
-                        SqlCommand cmd = new SqlCommand(insertQuery, con);
-                        cmd.Parameters.AddWithValue("@ModelTypeSerial", model.ModelTypeSerial);
-                        cmd.Parameters.AddWithValue("@EmployeeSerial", ViewBag.UserName);
-                        cmd.Parameters.AddWithValue("@Notes", model.Notes ?? "");
-                        cmd.Parameters.AddWithValue("@FromDate", model.FromDate);
-                        cmd.Parameters.AddWithValue("@ToDate", model.ToDate);
-                        cmd.Parameters.AddWithValue("@CreatedUser", ViewBag.Username);
+                        SqlCommand insertCmd = new SqlCommand(insertQuery, con);
+                        insertCmd.Parameters.Add("@ModelTypeSerial", SqlDbType.Int).Value = model.ModelTypeSerial;
+                        insertCmd.Parameters.Add("@EmployeeSerial", SqlDbType.VarChar).Value = ViewBag.UserName;
+                        insertCmd.Parameters.Add("@Notes", SqlDbType.VarChar).Value = model.Notes ?? "";
+                        insertCmd.Parameters.Add("@Date", SqlDbType.Date);
+                        insertCmd.Parameters.Add("@CreatedUser", SqlDbType.VarChar).Value = ViewBag.Username;
 
-                        // تم حذف con.Open() المكررة التي كانت هنا وتسبب الخطأ
-                        cmd.ExecuteNonQuery();
+                        // ✅ 3. Loop logic
+                        foreach (var date in dates)
+                        {
+                            //// ❌ منع الويك إند
+                            //if (date.DayOfWeek == DayOfWeek.Friday || date.DayOfWeek == DayOfWeek.Saturday)
+                            //{
+                            //    duplicateDays.Add(date.ToString("yyyy-MM-dd") + " (عطلة)");
+                            //    continue;
+                            //}
+
+                            // ❌ منع التكرار
+                            if (existingDates.Contains(date))
+                            {
+                                duplicateDays.Add(date.ToString("yyyy-MM-dd"));
+                                continue;
+                            }
+
+                            // ✅ Insert
+                            insertCmd.Parameters["@Date"].Value = date;
+                            insertCmd.ExecuteNonQuery();
+
+                            insertedDays.Add(date.ToString("yyyy-MM-dd"));
+                        }
+                    }
+                    if (insertedDays.Count == 0)
+                    {
+                        TempData["ErrorMessage"] =
+                            "❌ لم يتم حفظ أي يوم لأن جميع الأيام مسجلة مسبقاً:<br><br>" +
+                            string.Join("<br>", duplicateDays);
+
+                        return RedirectToAction("Create");
+                    }
+                    // ✅ رسالة موحدة احترافية
+                    TempData["SuccessMessage"] =
+                        $"تم حفظ {insertedDays.Count} يوم بنجاح" +
+                        (duplicateDays.Any()
+                            ? "<br>⚠️ تم تجاهل الأيام التالية: " + string.Join(" , ", duplicateDays)
+                            : "");
+
+                    return RedirectToAction("Create");
+                }
+                else
+                {
+                    try
+                    {
+                        List<string> insertedDays = new List<string>();
+                        List<string> duplicateDays = new List<string>();
+
+                        DateTime from = model.FromDate.Date;
+                        DateTime to = model.ToDate.Date;
+
+                        // ❌ Validation أساسي
+                        if (to < from)
+                        {
+                            TempData["ErrorMessage"] = "تاريخ النهاية قبل البداية ❌";
+                            return RedirectToAction("Create");
+                        }
+
+                        // ✅ تحويل الفترة إلى قائمة أيام
+                        var dates = Enumerable.Range(0, (to - from).Days + 1)
+                                              .Select(d => from.AddDays(d))
+                                              .ToList();
+
+                        using (SqlConnection con = new SqlConnection(connStr))
+                        {
+                            con.Open();
+
+                            // ✅ 1. شرط 48 ساعة للإجازة الاعتيادي
+                            if (model.ModelTypeSerial == 1)
+                            {
+                                int workDaysBetween = GetWorkDays(DateTime.Now, from);
+                                if (workDaysBetween < 2)
+                                {
+                                    TempData["ErrorMessage"] =
+                                        "يجب تقديم طلب الإجازة الاعتيادي قبل موعدها بيومي عمل على الأقل ⏳";
+                                    return RedirectToAction("Create");
+                                }
+                            }
+
+                            // ✅ 2. نجيب الأيام الموجودة مرة واحدة
+                            var paramNames = dates.Select((d, i) => "@d" + i).ToList();
+
+                            string checkQuery = $@"
+            SELECT CAST(FromDate AS DATE)
+            FROM ModelCode
+            WHERE EmployeeSerial = @EmpSerial
+            AND CAST(FromDate AS DATE) IN ({string.Join(",", paramNames)})";
+
+                            SqlCommand checkCmd = new SqlCommand(checkQuery, con);
+                            checkCmd.Parameters.AddWithValue("@EmpSerial", ViewBag.UserName);
+
+                            for (int i = 0; i < dates.Count; i++)
+                            {
+                                checkCmd.Parameters.AddWithValue(paramNames[i], dates[i]);
+                            }
+
+                            HashSet<DateTime> existingDates = new HashSet<DateTime>();
+
+                            using (var reader = checkCmd.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    existingDates.Add(reader.GetDateTime(0).Date);
+                                }
+                            }
+
+                            // ✅ 3. تجهيز Insert مرة واحدة
+                            string insertQuery = @"
+            INSERT INTO ModelCode
+            (ModelTypeSerial, EmployeeSerial, ModelStatus, HRModelStatus, Notes, FromDate, ToDate, CreatedDate, CreatedUser)
+            VALUES
+            (@ModelTypeSerial, @EmployeeSerial, 0, 0, @Notes, @Date, @Date, GETDATE(), @CreatedUser)";
+
+                            SqlCommand insertCmd = new SqlCommand(insertQuery, con);
+                            insertCmd.Parameters.Add("@ModelTypeSerial", SqlDbType.Int).Value = model.ModelTypeSerial;
+                            insertCmd.Parameters.Add("@EmployeeSerial", SqlDbType.VarChar).Value = ViewBag.UserName;
+                            insertCmd.Parameters.Add("@Notes", SqlDbType.VarChar).Value = model.Notes ?? "";
+                            insertCmd.Parameters.Add("@Date", SqlDbType.Date);
+                            insertCmd.Parameters.Add("@CreatedUser", SqlDbType.VarChar).Value = ViewBag.Username;
+
+                            // ✅ 4. اللوب
+                            foreach (var date in dates)
+                            {
+                                //// ❌ منع الجمعة والسبت
+                                //if (date.DayOfWeek == DayOfWeek.Friday || date.DayOfWeek == DayOfWeek.Saturday)
+                                //{
+                                //    duplicateDays.Add(date.ToString("yyyy-MM-dd") + " (عطلة)");
+                                //    continue;
+                                //}
+
+                                // ❌ منع التكرار
+                                if (existingDates.Contains(date))
+                                {
+                                    duplicateDays.Add(date.ToString("yyyy-MM-dd"));
+                                    continue;
+                                }
+
+                                // ✅ Insert
+                                insertCmd.Parameters["@Date"].Value = date;
+                                insertCmd.ExecuteNonQuery();
+
+                                insertedDays.Add(date.ToString("yyyy-MM-dd"));
+                            }
+                        }
+                        if (insertedDays.Count == 0)
+                        {
+                            TempData["ErrorMessage"] =
+                                "❌ لم يتم حفظ أي يوم لأن جميع الأيام مسجلة مسبقاً:<br><br>" +
+                                string.Join("<br>", duplicateDays);
+
+                            return RedirectToAction("Create");
+                        }
+
+                        // ✅ رسالة واحدة احترافية
+                        TempData["SuccessMessage"] =
+                            $"تم حفظ {insertedDays.Count} يوم بنجاح" +
+                            (duplicateDays.Any()
+                                ? "<br>⚠️   تم تجاهل الأيام التالية لأنهم مسجلين من قبل:" + string.Join(" , ", duplicateDays)
+                                : "");
+
+                    }
+                    catch (Exception ex)
+                    {
+                        TempData["ErrorMessage"] = "حدث خطأ أثناء الحفظ ❌";
                     }
 
-                    TempData["SuccessMessage"] = "تم الحفظ بنجاح ✅";
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = "حدث خطأ أثناء الحفظ ❌";
+                    return RedirectToAction("Create");
                 }
             }
 

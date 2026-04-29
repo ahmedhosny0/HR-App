@@ -38,7 +38,13 @@
                     </select>
                 </div>
 
-                <div class="row g-3 mb-3">
+                <div class="mb-3 form-check form-switch">
+                    <input type="hidden" name="IsMultipleDays" id="IsMultipleDaysHidden" />
+                    <input class="form-check-input" type="checkbox" id="isMultipleDays">
+                    <label class="form-check-label fw-bold" for="isMultipleDays">إجازة لأيام متفرقة؟</label>
+                </div>
+
+                <div id="rangeSection" class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label fw-bold">من تاريخ</label>
                         <input type="date" class="form-control" name="FromDate" id="FromDate" required />
@@ -48,7 +54,26 @@
                         <input type="date" class="form-control" name="ToDate" id="ToDate" required />
                     </div>
                 </div>
-                <div class="d-grid gap-2">
+                
+               <div id="multipleDaysSection" class="mb-3" style="display:none;">
+
+    <label class="form-label fw-bold">اختر الأيام</label>
+
+    <input type="text"
+           class="form-control"
+           id="SelectedDays"
+           name="SelectedDays"
+           placeholder="اختر الأيام" />
+
+    <small class="text-muted d-block mt-1">
+        يمكنك اختيار أكثر من يوم بشكل غير متصل.
+    </small>
+
+    <!-- Preview (UI) -->
+    <div id="selectedDaysPreview"
+         class="d-flex flex-wrap gap-2 mt-3"></div>
+
+</div>               <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary btn-lg shadow-sm">
                         <i class="bi bi-send-fill me-2"></i> إرسال الطلب للموافقة
                     </button>
@@ -57,12 +82,47 @@
         </div>
     </div>
 </div>
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="/js/lib/jquery-3.6.0.min.js"></script>
 <script src="/js/lib/select2.min.js"></script>
 <script src="/js/lib/sweetalert2@11.js"></script>
 <script>
     $(document).ready(function () {
+flatpickr("#SelectedDays", {
+    mode: "multiple",
+    dateFormat: "Y-m-d",
+    minDate: "today",
+
+    onChange: function(selectedDates) {
+
+        let container = document.getElementById("selectedDaysPreview");
+        container.innerHTML = "";
+
+        selectedDates.forEach(d => {
+            let date = d.toISOString().split('T')[0];
+
+            let tag = document.createElement("span");
+            tag.innerText = date;
+
+            container.appendChild(tag);
+        });
+    }
+});
+
+    // التبديل بين الفترة والأيام المتفرقة
+    $('#isMultipleDays').on('change', function() {
+            $('#IsMultipleDaysHidden').val($(this).is(':checked'));
+
+        if($(this).is(':checked')) {
+            $('#rangeSection').hide().find('input').removeAttr('required');
+            $('#multipleDaysSection').show();
+            // يمكنك إضافة كود هنا لتهيئة Calendar لسهولة الاختيار
+        } else {
+            $('#rangeSection').show().find('input').attr('required', 'required');
+            $('#multipleDaysSection').hide();
+        }
+    });
         // دالة مساعدة لحساب أيام العمل (تتجاهل الجمعة والسبت)
         function getWorkDaysBetween(start, end) {
             let count = 0;
@@ -89,13 +149,21 @@
             let toDate = new Date(toVal);
             let now = new Date();
             now.setHours(0, 0, 0, 0); // تصفير الوقت للمقارنة بالتواريخ فقط
-
+            if ($('#isMultipleDays').is(':checked')) {
+    let selectedDays = document.getElementById("SelectedDays").value;
+    if (!selectedDays || selectedDays.length === 0) {
+                e.preventDefault();
+                Swal.fire({ icon: 'error', title: 'خطأ', text: 'يرجى اختيار يوم واحد على الأقل!' });
+            }
+            // إرسال الأيام المتفرقة للسيرفر (تحتاج معالجة في الـ Controller)
+        } else {
             // 1. فحص التواريخ المنطقية
             if (toDate < fromDate) {
                 e.preventDefault();
                 Swal.fire({ icon: 'error', title: 'خطأ', text: 'تاريخ النهاية قبل البداية!' });
                 return;
             }
+        }
 
             // 2. فحص الـ 48 ساعة عمل للإجازة الاعتيادي
             if (typeVal == "1") { // تأكد أن 1 هو رقم الاعتيادي
@@ -118,14 +186,14 @@
         var error = '@Html.Raw(TempData["ErrorMessage"])';
 
         if (success) {
-            Swal.fire({ icon: 'success', title: 'تم!', text: success, confirmButtonText: 'حسناً' })
+                Swal.fire({ icon: 'success', title: 'تم!',     html: success, confirmButtonText: 'حسناً' })
                 .then(() => {
                     $('#leaveForm')[0].reset();
                 });
         }
 
         if (error) {
-            Swal.fire({ icon: 'error', title: 'خطأ', text: error, confirmButtonText: 'إغلاق' });
+            Swal.fire({ icon: 'error', title: 'خطأ', html: error, confirmButtonText: 'إغلاق' });
         }
     });
 </script>
