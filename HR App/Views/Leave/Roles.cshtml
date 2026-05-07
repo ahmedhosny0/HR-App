@@ -1,0 +1,154 @@
+﻿@model List<HR_App.ViewModel.RoleVM>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+
+    <!-- إضافة دور -->
+    <div class="card shadow-sm page-card mb-4">
+
+        <div class="page-header">
+            <h5>
+                <i class="bi bi-person-badge-fill me-2"></i>
+                إضافة دور وظيفي
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="post" action="/Leave/AddRole">
+
+                <div class="mb-4">
+
+                    <label class="form-label fw-bold mb-2">
+                        اسم الدور
+                    </label>
+
+                    <input type="text"
+                           name="RoleName"
+                           class="form-control"
+                           placeholder="مثال: مدير فرع / HR / موظف"
+                           required />
+
+                </div>
+
+                <div class="d-grid">
+                    <button class="btn btn-success btn-save shadow-sm">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        حفظ الدور
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- جدول الأدوار -->
+    <div class="card shadow-sm page-card">
+
+        <div class="card-header bg-dark text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-diagram-3-fill me-2"></i>
+                الأدوار الحالية
+            </h5>
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover table-modern text-center">
+
+                    <thead>
+                        <tr>
+                            <th style="width:90px">#</th>
+                            <th>اسم الدور</th>
+                            <th style="width:180px">الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (Model != null && Model.Count > 0)
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <strong>@item.RoleId</strong>
+                                    </td>
+
+                                    <td class="fw-bold">
+                                        @item.RoleName
+                                    </td>
+
+                                    <td>
+                                        <span class="role-badge">
+                                            مفعل
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+
+                                        <div class="d-flex justify-content-center align-items-center gap-2">
+
+                                            <a href="/Leave/EditRole/@item.RoleId"
+                                               class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                            <a href="/Leave/DeleteRole/@item.RoleId"
+                                               class="btn btn-danger btn-sm"
+                                               onclick="return confirm('هل تريد الحذف؟')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+
+                                        </div>
+
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3">
+
+                                    <div class="empty-state">
+                                        <i class="bi bi-inbox"></i>
+                                        لا توجد أدوار مضافة حالياً
+                                    </div>
+
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'تم بنجاح',
+            text: '@TempData["SuccessMessage"]',
+            confirmButtonText: 'حسناً'
+        });
+    </script>
+}

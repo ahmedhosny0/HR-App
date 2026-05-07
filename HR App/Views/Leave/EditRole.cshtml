@@ -1,0 +1,48 @@
+﻿@model HR_App.ViewModel.RoleVM
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5" style="direction:rtl">
+
+    <div class="card shadow-sm border-0" style="border-radius:15px;">
+
+        <!-- Header -->
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                تعديل الدور الوظيفي
+            </h5>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body p-4">
+
+            <form method="post">
+
+                <input type="hidden" name="RoleId" value="@Model.RoleId" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">اسم الدور</label>
+                    <input type="text"
+                           name="RoleName"
+                           value="@Model.RoleName"
+                           class="form-control"
+                           placeholder="اكتب اسم الدور" />
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        حفظ التعديل
+                    </button>
+
+                    <a href="/Leave/Roles" class="btn btn-secondary">
+                        رجوع
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>

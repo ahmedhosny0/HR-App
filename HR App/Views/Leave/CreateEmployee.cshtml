@@ -1,0 +1,232 @@
+﻿@model HR_App.ViewModel.EmployeeBulkVM
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5">
+
+    <div class="card shadow-sm border-0" style="border-radius:15px;">
+
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-people-fill me-2"></i>
+                تسجيل الموظفين
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="post" id="employeeForm">
+
+                <div id="employeesContainer">
+
+                    <!-- Employee Row -->
+                    <div class="employee-row border rounded-3 p-4 mb-4 bg-light">
+
+                        <div class="row g-3">
+
+                            <!-- Employee Code -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">
+                                    كود الموظف
+                                </label>
+
+                                <input name="Employees[0].EmployeeCode"
+                                       class="form-control"
+                                       placeholder="ادخل كود الموظف" />
+                            </div>
+
+                            <!-- Employee Name -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">
+                                    اسم الموظف
+                                </label>
+
+                                <input name="Employees[0].EmployeeName"
+                                       class="form-control"
+                                       placeholder="ادخل اسم الموظف" />
+                            </div>
+
+                            <!-- Job Title -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">
+                                    الوظيفة
+                                </label>
+
+                                <input name="Employees[0].JobTitle"
+                                       class="form-control"
+                                       placeholder="ادخل الوظيفة" />
+                            </div>
+
+                            <!-- Role -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    الدور الوظيفي
+                                </label>
+
+                                <select name="Employees[0].RoleId"
+                                        class="form-select select2">
+
+                                    <option value="">
+                                        اختر الدور
+                                    </option>
+
+                                    @foreach (var r in ViewBag.Roles as List<SelectListItem>)
+                                    {
+                                        <option value="@r.Value">
+                                            @r.Text
+                                        </option>
+                                    }
+
+                                </select>
+                            </div>
+
+                            <!-- Hire Date -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    تاريخ التعيين
+                                </label>
+
+                                <input type="date"
+                                       name="Employees[0].HireDate"
+                                       class="form-control" />
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex gap-2 mt-4">
+
+                    <button type="button"
+                            class="btn btn-secondary flex-fill"
+                            onclick="addEmployee()">
+
+                        <i class="bi bi-plus-circle me-2"></i>
+                        إضافة موظف
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-success flex-fill">
+
+                        <i class="bi bi-check-circle me-2"></i>
+                        حفظ الكل
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="/js/lib/jquery-3.6.0.min.js"></script>
+<script src="/js/lib/select2.min.js"></script>
+<script src="/js/lib/sweetalert2@11.js"></script>
+
+<script>
+
+    $('.select2').select2();
+
+    let index = 1;
+
+    function addEmployee() {
+
+        let html = `
+
+        <div class="employee-row border rounded-3 p-4 mb-4 bg-light">
+
+            <div class="row g-3">
+
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                        كود الموظف
+                    </label>
+
+                    <input name="Employees[${index}].EmployeeCode"
+                           class="form-control"
+                           placeholder="ادخل كود الموظف" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                        اسم الموظف
+                    </label>
+
+                    <input name="Employees[${index}].EmployeeName"
+                           class="form-control"
+                           placeholder="ادخل اسم الموظف" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                        الوظيفة
+                    </label>
+
+                    <input name="Employees[${index}].JobTitle"
+                           class="form-control"
+                           placeholder="ادخل الوظيفة" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        الدور الوظيفي
+                    </label>
+
+                    <select name="Employees[${index}].RoleId"
+                            class="form-select dynamic-role">
+
+                        <option value="">
+                            اختر الدور
+                        </option>
+
+                        ${document.querySelector('select[name="Employees[0].RoleId"]').innerHTML}
+
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        تاريخ التعيين
+                    </label>
+
+                    <input type="date"
+                           name="Employees[${index}].HireDate"
+                           class="form-control" />
+                </div>
+
+            </div>
+
+        </div>`;
+
+        document.getElementById("employeesContainer")
+            .insertAdjacentHTML("beforeend", html);
+
+        $('.dynamic-role').select2();
+
+        index++;
+    }
+
+</script>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'تم بنجاح',
+            text: '@TempData["SuccessMessage"]'
+        });
+    </script>
+}

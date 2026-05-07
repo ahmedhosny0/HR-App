@@ -1,0 +1,35 @@
+﻿
+#MainCategory {
+    display: none;
+}
+/*@media (max-width: 768px) {
+    h2 {
+        font-size: 20px;
+    }
+
+    .btn {
+        font-size: 14px !important;
+        padding: 8px 12px !important;
+    }
+
+    .Displayli {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+        .Displayli label {
+            width: 100% !important;
+        }
+
+    .navbar .btn {
+        font-size: 16px !important;
+        padding: 6px !important;
+        margin-bottom: 5px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .container {
+        padding: 10px;
+    }
+}*/

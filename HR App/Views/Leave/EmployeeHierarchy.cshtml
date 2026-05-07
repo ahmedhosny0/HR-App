@@ -1,0 +1,227 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5">
+
+    <!-- Add Hierarchy -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius:15px;">
+
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-diagram-3-fill me-2"></i>
+                إعداد الهيكل الوظيفي
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="post" action="/Leave/EmployeeHierarchy">
+
+                <div class="row g-3">
+
+                    <!-- Child Role -->
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-bold">
+                            الدور التابع
+                        </label>
+
+                        <select name="ChildRoleId"
+                                class="form-select select2"
+                                required>
+
+                            <option value="">
+                                -- اختر الدور --
+                            </option>
+
+                            @foreach (var item in ViewBag.Roles as List<SelectListItem>)
+                            {
+                                <option value="@item.Value">
+                                    @item.Text
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <!-- Parent Role -->
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-bold">
+                            يتبع لـ
+                        </label>
+
+                        <select name="ParentRoleId"
+                                class="form-select select2"
+                                required>
+
+                            <option value="">
+                                -- اختر الدور الأعلى --
+                            </option>
+
+                            @foreach (var item in ViewBag.Roles as List<SelectListItem>)
+                            {
+                                <option value="@item.Value">
+                                    @item.Text
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <!-- Submit -->
+                <div class="d-grid mt-4">
+
+                    <button type="submit"
+                            class="btn btn-success btn-lg shadow-sm">
+
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        حفظ العلاقة
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- Current Hierarchy -->
+    <div class="card shadow-sm border-0" style="border-radius:15px;">
+
+        <div class="card-header bg-dark text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-list-ul me-2"></i>
+                الهيكل الحالي
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle text-center">
+
+                    <thead class="table-light">
+
+                        <tr>
+                            <th>الدور التابع</th>
+                            <th>يتبع لـ</th>
+                            <th>الإجراءات</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @if (ViewBag.List != null)
+                        {
+                            foreach (var item in ViewBag.List)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <span class="badge bg-primary fs-6 p-2">
+                                            @item.Child
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-dark fs-6 p-2">
+                                            @item.Parent
+                                        </span>
+                                    </td>
+                                    <!-- Actions -->
+                                    <td>
+
+                                        <div class="d-flex justify-content-center gap-2">
+
+                                            <!-- Edit -->
+                                            <a href="/Leave/EditHierarchy/@item.Id"
+                                               class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+
+                                            </a>
+
+                                            <!-- Delete -->
+                                            <a href="/Leave/DeleteHierarchy/@item.Id"
+                                               class="btn btn-danger btn-sm shadow-sm"
+                                               onclick="return confirm('هل أنت متأكد من الحذف؟');">
+
+                                                <i class="fas fa-trash"></i>
+
+                                            </a>
+
+                                        </div>
+
+                                    </td>
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="/js/lib/jquery-3.6.0.min.js"></script>
+<script src="/js/lib/select2.min.js"></script>
+<script src="/js/lib/sweetalert2@11.js"></script>
+
+<script>
+
+    $(document).ready(function () {
+
+        $('.select2').select2();
+
+        // Success Message
+        var success = '@Html.Raw(TempData["SuccessMessage"])';
+
+        if (success) {
+
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح',
+                text: success,
+                confirmButtonText: 'حسناً'
+            });
+
+        }
+
+        // Error Message
+        var error = '@Html.Raw(TempData["ErrorMessage"])';
+
+        if (error) {
+
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: error,
+                confirmButtonText: 'إغلاق'
+            });
+
+        }
+
+    });
+
+</script>

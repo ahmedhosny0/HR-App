@@ -1,0 +1,141 @@
+﻿@model HR_App.ViewModel.EmployeeHierarchyVM
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5">
+
+    <!-- Edit Hierarchy -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius:15px;">
+
+        <div class="card-header bg-warning text-dark py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-pencil-square me-2"></i>
+                تعديل الهيكل الوظيفي
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="post" action="/Leave/EditHierarchy">
+
+                <!-- Hidden ID -->
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <div class="row g-3">
+
+                    <!-- Child Role -->
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-bold">
+                            الدور التابع
+                        </label>
+
+                        <select name="ChildRoleId"
+                                class="form-select select2"
+                                required>
+
+                            <option value="">
+                                -- اختر الدور --
+                            </option>
+
+                            @foreach (var item in ViewBag.Roles as List<SelectListItem>)
+                            {
+                                <option value="@item.Value"
+                                        selected="@(Model.ChildRoleId.ToString() == item.Value ? "selected" : null)">
+                                    @item.Text
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <!-- Parent Role -->
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-bold">
+                            يتبع لـ
+                        </label>
+
+                        <select name="ParentRoleId"
+                                class="form-select select2"
+                                required>
+
+                            <option value="">
+                                -- اختر الدور الأعلى --
+                            </option>
+
+                            @foreach (var item in ViewBag.Roles as List<SelectListItem>)
+                            {
+                                <option value="@item.Value"
+                                        selected="@(Model.ParentRoleId.ToString() == item.Value ? "selected" : null)">
+                                    @item.Text
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-between mt-4">
+
+                    <a href="/Leave/EmployeeHierarchy"
+                       class="btn btn-secondary btn-lg shadow-sm">
+
+                        <i class="bi bi-arrow-left-circle me-2"></i>
+                        رجوع
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-success btn-lg shadow-sm">
+
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        حفظ التعديل
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="/js/lib/jquery-3.6.0.min.js"></script>
+<script src="/js/lib/select2.min.js"></script>
+<script src="/js/lib/sweetalert2@11.js"></script>
+
+<script>
+
+    $(document).ready(function () {
+
+        $('.select2').select2();
+
+        var success = '@Html.Raw(TempData["SuccessMessage"])';
+
+        if (success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح',
+                text: success
+            });
+        }
+
+    });
+
+</script>

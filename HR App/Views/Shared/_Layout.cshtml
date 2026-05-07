@@ -6,9 +6,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Circle K</title>
-    <!-- Google Font (أفضل خط عربي) -->
-    <link href="/css/lib/css2.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/layout.css" />
+    <link rel="stylesheet" type="text/css" href="/css/components.css" />
+
+    <link href="/css/Evaluation.css" rel="stylesheet">
+    <link href="/css/lib/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/css/report.css" />
+    <link href="/css/lib/select2.min.css" rel="stylesheet" />
+    <link href="/css/lib/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/lib/datatables.min.css" rel="stylesheet">
+    <link href="/css/lib/css2.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/css/base.css" />
+
     <script>
         // تمييز الرابط النشط
         document.addEventListener("DOMContentLoaded", function () {
@@ -43,14 +52,35 @@
             <button class="navbar-toggler" id="navbarToggle" aria-label="Toggle navigation">&#9776;</button>
 
             <div class="navbar-left" id="navbarLeft">
-@*                 <div class="nav-item dropdown">
-                    <a href="#" class="nav-link">التقييم</a>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link">تقارير</a>
                     <div class="dropdown-menu">
-                        <a href="/Evaluation/Create" class="dropdown-item">إنشاء تقييم</a>
+                        <a href="/Leave/Employees" class="dropdown-item">الموظفين</a>
                         <a href="/Evaluation/GetAllEvaluations" class="dropdown-item">كل التقييمات</a>
                     </div>
-                </div> *@  
+                </div>  
                 <div class="nav-item ">
+                    <a href="/Leave/PendingApprovals" id="" class="nav-link">الطلبات المعلقه</a>
+                </div>
+                <div class="nav-item ">
+                    <a href="/Leave/CreateRequest" id="" class="nav-link">تسجيل طلب</a>
+                </div>
+                <div class="nav-item ">
+                    <a href="/Leave/EmployeeHierarchy" id="" class="nav-link">الربط بين الوظائف</a>
+                </div>
+                @* <div class="nav-item ">
+                    <a href="/Leave/WorkflowSteps" id="" class="nav-link">هيكل الوظائف</a>
+                </div> *@
+                <div class="nav-item ">
+                    <a href="/Leave/RequestTypes" id="" class="nav-link">انواع النماذج</a>
+                </div>
+                <div class="nav-item ">
+                    <a href="/Leave/Roles" id="" class="nav-link">الصلاحيات</a>
+                </div>
+                <div class="nav-item ">
+                    <a href="/Leave/CreateEmployee" id="" class="nav-link">تسجيل موظف</a>
+                </div>
+               @*  <div class="nav-item ">
                     <a href="/Leave/Create" id="" class="nav-link">تسجيل طلب</a>
                 </div>
                 <div class="nav-item ">
@@ -58,7 +88,7 @@
                 </div>
                 <div class="nav-item ">
                     <a href="/Leave/MyRequests" id="" class="nav-link">عرض طلباتي</a>
-                </div>
+                </div> *@
             </div>
 
             <div class="navbar-right" id="navbarRight">
@@ -78,7 +108,29 @@
             <strong>&copy; <span id="current-year"></span> Circle K .</strong> جميع الحقوق محفوظة.
         </footer>
     </div>
+    <!-- Core Libraries -->
     <script src="/js/lib/jquery-3.6.0.min.js"></script>
+    <script src="/js/lib/sweetalert2@11.js"></script>
+    <script src="/js/lib/select2.min.js"></script>
+    <script src="/js/signalr.min.js"></script>
+
+    <!-- Global JS -->
+    <script src="/js/mainAttend.js"></script>
+
+    <script src="/js/signalr.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="/js/lib/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="/js/lib/buttons.dataTables.min.css">
+
+
+    <script src="/js/lib/dataTables.buttons.min.js"></script>
+    <script src="/js/lib/buttons.html5.min.js"></script>
+    <script src="/js/lib/buttons.print.min.js"></script>
+
+    <script src="/js/lib/jszip.min.js"></script>
+    <script src="/js/lib/pdfmake.min.js"></script>
+    <script src="/js/lib/vfs_fonts.js"></script>
+    <script src="~/js/layout.js"></script>
 
     <script>
                 var username = '@ViewBag.Username';
@@ -127,7 +179,7 @@
         }
         document.getElementById("current-year").textContent = new Date().getFullYear();
     </script>
-    <script src="~/js/layout.js"></script>
+    @RenderSection("Scripts", required: false)
 
 </body>
 </html>

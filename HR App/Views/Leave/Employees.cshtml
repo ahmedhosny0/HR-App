@@ -1,0 +1,236 @@
+﻿@model List<HR_App.ViewModel.EmployeeVM>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+
+<div class="container-fluid mt-4" style="direction:rtl">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fas fa-users me-2 text-primary"></i>
+                الموظفين
+            </h2>
+
+            <p class="text-muted mb-0">
+                إدارة وعرض جميع الموظفين داخل النظام
+            </p>
+        </div>
+
+        <a href="/Leave/CreateEmployee"
+           class="btn btn-success shadow-sm">
+
+            <i class="fa fa-plus"></i>
+            إضافة موظف
+
+        </a>
+
+    </div>
+
+    <!-- TABLE CONTAINER -->
+    <div class="report-container">
+
+        <div class="table-responsive">
+
+            <table id="example" class="table-modern">
+
+                <thead>
+
+                    <tr>
+
+                        <th>الإجراءات</th>
+
+                        <th>#</th>
+
+                        <th>الكود</th>
+
+                        <th>اسم الموظف</th>
+
+                        <th>الدور</th>
+
+                        <th>الوظيفة</th>
+
+                        <th>تاريخ التعيين</th>
+
+                        <th>الحالة</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+
+                            <!-- ACTIONS -->
+                            <td class="text-center" data-label="الإجراءات">
+
+                                <div class="d-flex justify-content-center align-items-center gap-2">
+
+                                    <!-- EDIT -->
+                                    <a href="/Leave/EditEmployee/@item.EmployeeId"
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+
+
+                                    <!-- DELETE -->
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm"
+                                            onclick="confirmDelete(@item.EmployeeId)">
+
+                                        <i class="fas fa-trash"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                            <!-- ID -->
+                            <td data-label="#">
+                                @item.EmployeeId
+                            </td>
+
+                            <!-- CODE -->
+                            <td data-label="الكود">
+                                @item.EmployeeCode
+                            </td>
+
+                            <!-- NAME -->
+                            <td data-label="اسم الموظف">
+
+                                <div class="fw-bold text-dark">
+                                    @item.EmployeeName
+                                </div>
+
+                            </td>
+
+                            <!-- ROLE -->
+                            <td data-label="الدور">
+                                @item.RoleName
+                            </td>
+
+                            <!-- JOB -->
+                            <td data-label="الوظيفة">
+                                @item.JobTitle
+                            </td>
+
+                            <!-- HIRE DATE -->
+                            <td data-label="تاريخ التعيين">
+                                @item.HireDate.ToString("yyyy-MM-dd")
+                            </td>
+
+                            <!-- STATUS -->
+                            <td data-label="الحالة">
+
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success px-3 py-2">
+                                        نشط
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger px-3 py-2">
+                                        غير نشط
+                                    </span>
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <!-- SUCCESS MESSAGE -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح',
+                text: '@TempData["SuccessMessage"]',
+                confirmButtonText: 'حسناً'
+            });
+        </script>
+    }
+
+    <!-- DELETE -->
+    <script>
+
+        function confirmDelete(id) {
+
+            Swal.fire({
+
+                title: 'هل تريد حذف الموظف؟',
+                text: 'لن تتمكن من التراجع بعد الحذف',
+                icon: 'warning',
+
+                showCancelButton: true,
+
+                confirmButtonText: 'نعم، حذف',
+                cancelButtonText: 'إلغاء',
+
+                reverseButtons: true
+
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    window.location.href = '/Leave/DeleteEmployee/' + id;
+
+                }
+
+            });
+
+        }
+
+    </script>
+
+    <!-- DATATABLE -->
+    <script>
+
+        $(document).ready(function () {
+
+            $('#example').DataTable({
+
+                pageLength: 15,
+
+                lengthChange: true,
+
+                responsive: true,
+
+                dom: 'Bfrtip',
+
+                buttons: [
+
+                    'excelHtml5',
+                    'pdfHtml5'
+
+                ]
+
+            });
+
+        });
+
+    </script>
+}

@@ -1,0 +1,194 @@
+﻿@model HR_App.ViewModel.LeaveRequestVM
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5">
+
+    <div class="card shadow-sm border-0" style="border-radius:15px;">
+
+        <!-- Header -->
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-file-earmark-plus-fill me-2"></i>
+                إنشاء طلب جديد
+            </h5>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body p-4">
+
+            <form method="post" id="requestForm">
+
+                <div class="row g-3">
+
+                    <!-- Employee -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            الموظف
+                        </label>
+
+                        <select name="EmployeeId"
+                                class="form-select select2"
+                                required>
+
+                            <option value="">
+                                اختر الموظف
+                            </option>
+
+                            @foreach (var e in ViewBag.Employees as List<SelectListItem>)
+                            {
+                                <option value="@e.Value">
+                                    @e.Text
+                                </option>
+                            }
+
+                        </select>
+                    </div>
+
+                    <!-- Request Type -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            نوع الطلب
+                        </label>
+
+                        <select name="RequestTypeId"
+                                class="form-select select2"
+                                required>
+
+                            <option value="">
+                                اختر النوع
+                            </option>
+
+                            @foreach (var t in ViewBag.RequestTypes as List<SelectListItem>)
+                            {
+                                <option value="@t.Value">
+                                    @t.Text
+                                </option>
+                            }
+
+                        </select>
+                    </div>
+
+                    <!-- From Date -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            من تاريخ
+                        </label>
+
+                        <input type="date"
+                               name="FromDate"
+                               class="form-control" />
+                    </div>
+
+                    <!-- To Date -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            إلى تاريخ
+                        </label>
+
+                        <input type="date"
+                               name="ToDate"
+                               class="form-control" />
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="col-12">
+                        <label class="form-label fw-bold">
+                            ملاحظات
+                        </label>
+
+                        <textarea name="Notes"
+                                  rows="4"
+                                  class="form-control"
+                                  placeholder="اكتب أي ملاحظات إضافية..."></textarea>
+                    </div>
+
+                </div>
+
+                <!-- Submit -->
+                <div class="d-grid mt-4">
+                    <button class="btn btn-success btn-lg shadow-sm">
+
+                        <i class="bi bi-send-fill me-2"></i>
+                        إرسال الطلب
+
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="/js/lib/jquery-3.6.0.min.js"></script>
+<script src="/js/lib/select2.min.js"></script>
+<script src="/js/lib/sweetalert2@11.js"></script>
+
+<script>
+
+    $(document).ready(function () {
+
+        $('.select2').select2();
+
+        $('#requestForm').on('submit', function (e) {
+
+            let fromDate = $('input[name="FromDate"]').val();
+            let toDate = $('input[name="ToDate"]').val();
+
+            if (fromDate && toDate) {
+
+                if (toDate < fromDate) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'تاريخ النهاية لا يمكن أن يكون قبل البداية'
+                    });
+
+                    return false;
+                }
+            }
+        });
+
+        // Success Message
+        var success = '@Html.Raw(TempData["SuccessMessage"])';
+
+        if (success) {
+
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح',
+                text: success,
+                confirmButtonText: 'حسناً'
+            });
+
+        }
+
+        // Error Message
+        var error = '@Html.Raw(TempData["ErrorMessage"])';
+
+        if (error) {
+
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: error,
+                confirmButtonText: 'إغلاق'
+            });
+
+        }
+
+    });
+
+</script>

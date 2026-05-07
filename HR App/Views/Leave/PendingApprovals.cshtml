@@ -1,0 +1,262 @@
+﻿@model List<HR_App.ViewModel.PendingRequestVM>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4" >
+
+    <!-- PAGE HEADER -->
+    <div class="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fas fa-envelope-open-text text-primary me-2"></i>
+                الطلبات المطلوب اعتمادها
+            </h2>
+
+            <p class="text-muted mb-0">
+                مراجعة واعتماد أو رفض الطلبات المرسلة
+            </p>
+        </div>
+
+        <div>
+
+            <span class="badge bg-primary fs-6 px-3 py-2">
+                إجمالي الطلبات :
+                @(Model?.Count ?? 0)
+            </span>
+
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="report-container">
+
+        <div class="table-responsive">
+
+            <table id="example" class="table-modern">
+
+                <thead>
+
+                    <tr>
+
+                        <th>الإجراءات</th>
+
+                        <th>الموظف</th>
+
+                        <th>نوع الطلب</th>
+
+                        <th>من تاريخ</th>
+
+                        <th>إلى تاريخ</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model != null && Model.Count > 0)
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <!-- ACTIONS -->
+                                <td data-label="الإجراءات">
+
+                                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+
+                                        <!-- APPROVE -->
+                                        <button onclick="respond(@item.ApprovalId, @item.RequestId, 2)"
+                                                class="btn btn-success btn-sm">
+
+                                            <i class="fas fa-check-circle"></i>
+
+                                        </button>
+
+                                        <!-- REJECT -->
+                                        <button onclick="respond(@item.ApprovalId, @item.RequestId, 3)"
+                                                class="btn btn-danger btn-sm">
+
+                                            <i class="fas fa-times-circle"></i>
+
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                                <!-- EMPLOYEE -->
+                                <td data-label="الموظف">
+
+                                    <div class="fw-bold text-dark">
+                                        @item.EmployeeName
+                                    </div>
+
+                                </td>
+
+                                <!-- REQUEST TYPE -->
+                                <td data-label="نوع الطلب">
+
+                                    <span class="badge bg-primary px-3 py-2">
+                                        @item.RequestType
+                                    </span>
+
+                                </td>
+
+                                <!-- FROM -->
+                                <td data-label="من تاريخ">
+
+                                    @item.FromDate.ToString("yyyy-MM-dd")
+
+                                </td>
+
+                                <!-- TO -->
+                                <td data-label="إلى تاريخ">
+
+                                    @item.ToDate.ToString("yyyy-MM-dd")
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="5">
+
+                                <div class="text-center py-5">
+
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+
+                                    <div class="fw-bold text-muted">
+                                        لا توجد طلبات حالياً
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts
+{
+
+    <!-- APPROVAL -->
+    <script>
+
+        function respond(appId, reqId, status) {
+
+            let actionText = status == 2 ? "موافقة" : "رفض";
+
+            let actionColor = status == 2 ? "#198754" : "#dc3545";
+
+            Swal.fire({
+
+                title: 'هل أنت متأكد؟',
+
+                text: 'سيتم تنفيذ الإجراء على الطلب',
+
+                icon: 'question',
+
+                input: 'textarea',
+
+                inputPlaceholder: 'أضف ملاحظاتك هنا...',
+
+                showCancelButton: true,
+
+                confirmButtonText: actionText,
+
+                cancelButtonText: 'إلغاء',
+
+                confirmButtonColor: actionColor,
+
+                reverseButtons: true,
+
+                preConfirm: (notes) => {
+
+                    return $.post('/Leave/ProcessApproval', {
+
+                        approvalId: appId,
+                        requestId: reqId,
+                        status: status,
+                        notes: notes
+
+                    });
+
+                }
+
+            }).then((result) => {
+
+                if (result.value.success) {
+
+                    Swal.fire({
+
+                        icon: 'success',
+
+                        title: 'تم بنجاح',
+
+                        text: 'تم معالجة الطلب بنجاح',
+
+                        confirmButtonText: 'حسناً'
+
+                    }).then(() => {
+
+                        location.reload();
+
+                    });
+
+                }
+
+            });
+
+        }
+
+    </script>
+
+    <!-- DATATABLE -->
+   @*  <script>
+
+        $(document).ready(function () {
+
+            $('#example').DataTable({
+
+                pageLength: 15,
+
+                lengthChange: true,
+
+                responsive: true,
+
+                dom: 'Bfrtip',
+
+                buttons: [
+
+                    'excelHtml5',
+                    'pdfHtml5'
+
+                ]
+
+            });
+
+        });
+    </script>
+     *@
+
+}

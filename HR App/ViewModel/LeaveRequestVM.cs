@@ -4,29 +4,17 @@ namespace HR_App.ViewModel
 {
     public class LeaveRequestVM
     {
-        public int ModelSerial { get; set; }
-        public string SelectedDays { get; set; }
-        public bool IsMultipleDays { get; set; }
-        public int EmployeeSerial { get; set; }   // 👈 المختار
-        public int ManagerSerial { get; set; }
+        public int RequestId { get; set; }
 
-        public int ModelTypeSerial { get; set; }
+        public int RequestTypeId { get; set; }
+        public int EmployeeId { get; set; }
 
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
-        public string StartDate { get; set; }
-        public string EndDate { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+
         public string Notes { get; set; }
-        public string Job { get; set; }
-        public string RoleName { get; set; }
-        public string EmployeeName { get; set; }
-        public string ManagerName { get; set; }
-        public string ModelName { get; set; }
-        public string ManagerReply { get; set; }
-        public string HRReply { get; set; }
 
-        public List<SelectListItem> LeaveTypes { get; set; }
-        public List<SelectListItem> Employees { get; set; }   // 👈 الجديد
-        public List<SelectListItem> Managers { get; set; }   // 👈 الجديد
+        public int Status { get; set; }
+        public int CurrentStep { get; set; }
     }
 }

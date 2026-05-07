@@ -3,3 +3,95 @@
     color: #1f2937;
     font-family: 'Segoe UI',sans-serif;
 }
+
+.attendance-actions a {
+    transition: all 0.25s ease;
+    opacity: 0.55;
+    transform: scale(0.97);
+    border-radius: 10px;
+    position: relative;
+}
+
+    /* Hover */
+    .attendance-actions a:hover {
+        opacity: 1;
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+/* Active */
+.active-btn {
+    opacity: 1 !important;
+    transform: scale(1.08);
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    border: 1px solid rgba(13,110,253,0.3);
+}
+
+    /* Active glowing indicator */
+    .active-btn::after {
+        content: "";
+        position: absolute;
+        bottom: -3px;
+        left: 10%;
+        width: 80%;
+        height: 3px;
+        background: linear-gradient(90deg,#0d6efd,#20c997);
+        border-radius: 5px;
+        animation: glowLine 1.5s infinite alternate;
+    }
+
+/* Animation */
+@keyframes glowLine {
+    from {
+        opacity: 0.4;
+        transform: scaleX(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+.attendance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+    /* كل زر */
+    .attendance-actions a {
+        white-space: nowrap;
+        font-size: 13px;
+    }
+
+/* ACTIVE (نفس اللي عندك بس محسّن) */
+.active-btn {
+    opacity: 1 !important;
+    transform: scale(1.05);
+}
+
+/* 📱 MOBILE */
+@media (max-width: 768px) {
+
+    .attendance-actions {
+        justify-content: center;
+    }
+
+        .attendance-actions a {
+            flex: 1 1 45%;
+            text-align: center;
+            font-size: 12px;
+            padding: 6px 8px;
+        }
+
+    #navall {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .navbar-brand {
+        margin-bottom: 10px;
+    }
+}

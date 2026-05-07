@@ -1,0 +1,93 @@
+﻿@model HR_App.ViewModel.EmployeeVM
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5" >
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-primary text-white">
+            <h5>تعديل الموظف</h5>
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+
+                <input type="hidden" name="EmployeeId" value="@Model.EmployeeId" />
+
+                <div class="mb-3">
+                    <label>كود الموظف</label>
+                    <input type="text"
+                           name="EmployeeCode"
+                           class="form-control"
+                           value="@Model.EmployeeCode" />
+                </div>
+
+                <div class="mb-3">
+                    <label>اسم الموظف</label>
+                    <input type="text"
+                           name="EmployeeName"
+                           class="form-control"
+                           value="@Model.EmployeeName" />
+                </div>
+
+                <div class="mb-3">
+                    <label>الوظيفة</label>
+                    <input type="text"
+                           name="JobTitle"
+                           class="form-control"
+                           value="@Model.JobTitle" />
+                </div>
+
+                <div class="mb-3">
+                    <label>الدور</label>
+
+                    <select name="RoleId" class="form-control">
+
+                        @foreach (var item in ViewBag.Roles as List<SelectListItem>)
+                        {
+                            <option value="@item.Value"
+                                    selected="@(Model.RoleId.ToString() == item.Value)">
+                                @item.Text
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label>تاريخ التعيين</label>
+
+                    <input type="date"
+                           name="HireDate"
+                           class="form-control"
+                           value="@Model.HireDate.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="form-check mb-3">
+
+                    <input type="checkbox"
+                           name="IsActive"
+                           class="form-check-input"
+                           @(Model.IsActive ? "checked" : "") />
+
+                    <label class="form-check-label">
+                        موظف نشط
+                    </label>
+
+                </div>
+
+                <button class="btn btn-success w-100">
+                    حفظ التعديل
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,94 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5" style="direction:rtl">
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5>إضافة خطوة Workflow</h5>
+        </div>
+
+        <div class="card-body">
+
+            <form method="post" action="/Leave/AddWorkflowStep">
+
+                <!-- نوع الطلب -->
+                <div class="mb-3">
+                    <label class="form-label">نوع الطلب</label>
+                    <select name="RequestTypeId" class="form-control">
+                        @foreach (var item in ViewBag.RequestTypes)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- ترتيب الخطوة -->
+                <div class="mb-3">
+                    <label class="form-label">ترتيب الخطوة</label>
+                    <input type="number" name="StepOrder" class="form-control" />
+                </div>
+
+                <!-- نوع الموافقة -->
+                <div class="mb-3">
+                    <label class="form-label">الموافق</label>
+                    <select name="ApproverType" class="form-control">
+                        <option value="Manager">مدير</option>
+                        <option value="HR">HR</option>
+                        <option value="Role">دور وظيفي</option>
+                    </select>
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                    <label class="form-label">الدور (اختياري)</label>
+                    <select name="RoleId" class="form-control">
+                        <option value="">-- اختر --</option>
+                        @foreach (var item in ViewBag.Roles)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <button class="btn btn-success w-100">
+                    إضافة خطوة
+                </button>
+
+            </form>
+
+        </div>
+    </div>
+
+    <!-- عرض الخطوات -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5>خطوات الـ Workflow</h5>
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th>الترتيب</th>
+                        <th>نوع الموافقة</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var item in ViewBag.Steps)
+                    {
+                        <tr>
+                            <td>@item.StepOrder</td>
+                            <td>@item.ApproverType</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>

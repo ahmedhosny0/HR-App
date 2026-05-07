@@ -44,7 +44,7 @@ body {
 .navbar-left {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
     flex-direction: row-reverse;
 }
 
@@ -52,7 +52,7 @@ body {
 .navbar-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 5px;
 }
 
     /* LINKS */
