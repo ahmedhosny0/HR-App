@@ -843,13 +843,14 @@ WHERE EmployeeId=@Id";
             {
                 // Query بتجيب بيانات الطلب + بيانات الموظف اللي قدمه من جدول الـ Approvals
                 string sql = @"
-            SELECT a.ApproverId ,a.ApprovalId, a.RequestId, r.EmployeeId, e.EmployeeName, 
-                   rt.Name TypeName, r.FromDate, r.ToDate, a.StepOrder
-            FROM HR_RequestApprovals a
-            JOIN HR_Requests r ON a.RequestId = r.RequestId
-            JOIN HR_Employees e ON r.EmployeeId = e.EmployeeId
-            JOIN HR_RequestTypes rt ON r.RequestTypeId = rt.RequestTypeId
-            WHERE a.ApproverId = @ManagerId AND a.Status = 1"; // 1 يعني Pending
+             SELECT a.ApproverId ,a.ApprovalId, a.RequestId, r.EmployeeId, e.EmployeeName, 
+        rt.Name TypeName, r.FromDate, r.ToDate, a.StepOrder
+ FROM HR_RequestApprovals a
+ JOIN HR_Requests r ON a.RequestId = r.RequestId
+ JOIN HR_Employees e ON r.EmployeeId = e.EmployeeId
+ JOIN HR_Employees App ON App.EmployeeId = a.ApproverId
+ JOIN HR_RequestTypes rt ON r.RequestTypeId = rt.RequestTypeId
+ WHERE App.EmployeeCode = @ManagerId AND a.Status = 1 "; // 1 يعني Pending
 
                 SqlCommand cmd = new SqlCommand(sql, con);
                 cmd.Parameters.AddWithValue("@ManagerId", currentManagerId);

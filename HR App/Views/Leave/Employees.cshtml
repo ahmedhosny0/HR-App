@@ -168,7 +168,7 @@
             Swal.fire({
                 icon: 'success',
                 title: 'تم بنجاح',
-                text: '@TempData["SuccessMessage"]',
+                html: '@TempData["SuccessMessage"]',
                 confirmButtonText: 'حسناً'
             });
         </script>
@@ -182,7 +182,7 @@
             Swal.fire({
 
                 title: 'هل تريد حذف الموظف؟',
-                text: 'لن تتمكن من التراجع بعد الحذف',
+                html: 'لن تتمكن من التراجع بعد الحذف',
                 icon: 'warning',
 
                 showCancelButton: true,
