@@ -4,93 +4,251 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-5" >
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
 
-    <div class="card shadow-sm">
+<div class="container mt-5">
 
-        <div class="card-header bg-primary text-white">
-            <h5>تعديل الموظف</h5>
+    <div class="card shadow-sm border-0" style="border-radius:15px;">
+
+        <!-- HEADER -->
+        <div class="card-header bg-primary text-white py-3">
+
+            <h5 class="mb-0 fw-bold">
+
+                <i class="bi bi-pencil-square me-2"></i>
+                تعديل بيانات الموظف
+
+            </h5>
+
         </div>
 
-        <div class="card-body">
+        <!-- BODY -->
+        <div class="card-body p-4">
 
-            <form method="post">
+            <form method="post" id="employeeForm">
 
-                <input type="hidden" name="EmployeeId" value="@Model.EmployeeId" />
+                <input type="hidden"
+                       name="EmployeeId"
+                       value="@Model.EmployeeId" />
 
-                <div class="mb-3">
-                    <label>كود الموظف</label>
-                    <input type="text"
-                           name="EmployeeCode"
-                           class="form-control"
-                           value="@Model.EmployeeCode" />
+                <div class="employee-row border rounded-3 p-4 bg-light">
+
+                    <div class="row g-3">
+
+                        <!-- CODE -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                كود الموظف
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="text"
+                                   name="EmployeeCode"
+                                   class="form-control employee-code"
+                                   required
+                                   maxlength="50"
+                                   placeholder="ادخل كود الموظف"
+                                   value="@Model.EmployeeCode" />
+
+                        </div>
+
+                        <!-- NAME -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                اسم الموظف
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="text"
+                                   name="EmployeeName"
+                                   class="form-control employee-name"
+                                   required
+                                   maxlength="200"
+                                   placeholder="ادخل اسم الموظف"
+                                   value="@Model.EmployeeName" />
+
+                        </div>
+
+                        <!-- JOB -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                الوظيفة
+                            </label>
+
+                            <input type="text"
+                                   name="JobTitle"
+                                   class="form-control"
+                                   maxlength="200"
+                                   placeholder="ادخل الوظيفة"
+                                   value="@Model.JobTitle" />
+
+                        </div>
+
+                        <!-- ROLE -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                الدور الوظيفي
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <select name="RoleId"
+                                    class="form-select select2 role-select"
+                                    required>
+
+                                <option value="">
+                                    اختر الدور
+                                </option>
+
+                                @foreach (var item in ViewBag.Roles as List<SelectListItem>)
+                                {
+                                    <option value="@item.Value"
+                                            selected="@(Model.RoleId?.ToString() == item.Value)">
+                                        @item.Text
+                                    </option>
+                                }
+
+                            </select>
+
+                        </div>
+
+                        <!-- HIRE DATE -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                تاريخ التعيين
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="date"
+                                   name="HireDate"
+                                   class="form-control hire-date"
+                                   value="@(Model.HireDate?.ToString("yyyy-MM-dd"))" />
+
+                        </div>
+
+                        <!-- INSURANCE DATE -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                تاريخ التأمين
+                            </label>
+
+                            <input type="date"
+                                   name="InsuranceStartDate"
+                                   class="form-control"
+                                   value="@(Model.InsuranceStartDate?.ToString("yyyy-MM-dd"))" />
+
+                        </div>
+
+                        <!-- ANNUAL BALANCE -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                رصيد الإجازة السنوي
+                            </label>
+
+                            <input type="number"
+                                   name="AnnualLeaveBalance"
+                                   class="form-control"
+                                   min="0"
+                                   value="@Model.AnnualLeaveBalance" />
+
+                        </div>
+
+                        <!-- CASUAL -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                رصيد الإجازات العارضة
+                            </label>
+
+                            <input type="number"
+                                   name="CasualLeaveBalance"
+                                   class="form-control"
+                                   min="0"
+                                   max="7"
+                                   value="@Model.CasualLeaveBalance" />
+
+                        </div>
+
+                        <!-- SICK -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                الأيام المرضي المستخدمة
+                            </label>
+
+                            <input type="number"
+                                   name="SickLeaveUsedDays"
+                                   class="form-control"
+                                   min="0"
+                                   value="@Model.SickLeaveUsedDays" />
+
+                            <small class="text-muted">
+                                الحد الأقصى 270 يوم (9 شهور)
+                            </small>
+
+                        </div>
+                        <input type="date"
+                               name="InsuranceStartDate"
+                               class="form-control"
+                               value="@(Model.InsuranceStartDate?.ToString("yyyy-MM-dd"))" />
+                        <div class="col-md-4">
+                            <label>آخر تحديث للرصيد الثانوي</label>
+                            <input type="date" value="@(Model.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd"))" name="LastLeaveBalanceUpdate" class="form-control" />
+                        </div>
+
+                        <!-- ACTIVE -->
+                        <div class="col-md-12 mt-3">
+
+                            <div class="form-check form-switch">
+
+                                <input type="checkbox"
+                                       name="IsActive"
+                                       class="form-check-input"
+                                       value="true"
+                                       @(Model.IsActive ? "checked" : "") />
+
+                                <label class="form-check-label fw-bold">
+                                    موظف نشط
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <div class="mb-3">
-                    <label>اسم الموظف</label>
-                    <input type="text"
-                           name="EmployeeName"
-                           class="form-control"
-                           value="@Model.EmployeeName" />
-                </div>
+                <!-- BUTTONS -->
+                <div class="d-flex gap-2 mt-4">
 
-                <div class="mb-3">
-                    <label>الوظيفة</label>
-                    <input type="text"
-                           name="JobTitle"
-                           class="form-control"
-                           value="@Model.JobTitle" />
-                </div>
+                    <a href="/Leave/Employees"
+                       class="btn btn-secondary flex-fill">
 
-                <div class="mb-3">
-                    <label>الدور</label>
+                        <i class="bi bi-arrow-right-circle me-2"></i>
+                        رجوع
 
-                    <select name="RoleId" class="form-control">
+                    </a>
 
-                        @foreach (var item in ViewBag.Roles as List<SelectListItem>)
-                        {
-                            <option value="@item.Value"
-                                    selected="@(Model.RoleId.ToString() == item.Value)">
-                                @item.Text
-                            </option>
-                        }
+                    <button type="submit"
+                            class="btn btn-success flex-fill">
 
-                    </select>
-                </div>
+                        <i class="bi bi-check-circle me-2"></i>
+                        حفظ التعديلات
 
-                <div class="mb-3">
-                    <label>تاريخ التعيين</label>
-
-                    <input type="date"
-                           name="HireDate"
-                           class="form-control"
-                           value="@(Model.HireDate?.ToString("yyyy-MM-dd"))" />
+                    </button>
 
                 </div>
-                <div class="mb-3">
-                    <label>تاريخ التأمين</label>
-
-                    <input type="date"
-                           name="InsuranceStartDate"
-                           class="form-control"
-                           value="@(Model.InsuranceStartDate?.ToString("yyyy-MM-dd"))"    />
-                </div>
-                <div class="form-check mb-3">
-
-                    <input type="checkbox"
-                           name="IsActive"
-                           class="form-check-input"
-                           @(Model.IsActive ? "checked" : "") />
-
-                    <label class="form-check-label">
-                        موظف نشط
-                    </label>
-
-                </div>
-
-                <button class="btn btn-success w-100">
-                    حفظ التعديل
-                </button>
 
             </form>
 
@@ -99,3 +257,117 @@
     </div>
 
 </div>
+
+<script src="/js/lib/jquery-3.6.0.min.js"></script>
+<script src="/js/lib/select2.min.js"></script>
+<script src="/js/lib/sweetalert2@11.js"></script>
+
+<script>
+
+    $('.select2').select2();
+
+    $('#employeeForm').on('submit', function (e) {
+
+        let isValid = true;
+
+        $('.form-control, .form-select').removeClass('is-invalid');
+
+        // Employee Code
+        let code = $('.employee-code').val()?.trim();
+
+        if (!code) {
+
+            isValid = false;
+
+            $('.employee-code').addClass('is-invalid');
+
+        }
+
+        // Employee Name
+        let name = $('.employee-name').val()?.trim();
+
+        if (!name) {
+
+            isValid = false;
+
+            $('.employee-name').addClass('is-invalid');
+
+        }
+
+        // Role
+        let role = $('.role-select').val();
+
+        $('.role-select')
+            .next('.select2')
+            .find('.select2-selection')
+            .removeClass('is-invalid');
+
+        if (!role) {
+
+            isValid = false;
+
+            $('.role-select')
+                .next('.select2')
+                .find('.select2-selection')
+                .addClass('is-invalid');
+
+        }
+
+        // Hire Date
+        let hireDate = $('.hire-date').val();
+
+        if (!hireDate) {
+
+            isValid = false;
+
+            $('.hire-date').addClass('is-invalid');
+
+        }
+
+        if (!isValid) {
+
+            e.preventDefault();
+
+            Swal.fire({
+
+                icon: 'error',
+
+                title: 'بيانات ناقصة',
+
+                text: 'من فضلك أكمل جميع الحقول المطلوبة'
+
+            });
+
+            return false;
+
+        }
+
+    });
+
+</script>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+
+        Swal.fire({
+            icon: 'success',
+            title: 'تم بنجاح',
+            html: '@Html.Raw(TempData["SuccessMessage"])'
+        });
+
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script>
+
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            html: '@Html.Raw(TempData["ErrorMessage"])'
+        });
+
+    </script>
+}

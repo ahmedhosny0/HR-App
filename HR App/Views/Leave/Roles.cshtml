@@ -20,6 +20,7 @@
 
             <form method="post" action="/Leave/AddRole">
 
+                <!-- ROLE NAME -->
                 <div class="mb-4">
 
                     <label class="form-label fw-bold mb-2">
@@ -34,11 +35,33 @@
 
                 </div>
 
+                <!-- ALLOW MULTIPLE -->
+                <div class="form-check mb-4">
+
+                    <input id="AllowMultipleEmployees" type="checkbox"
+                           name="AllowMultipleEmployees"
+                           class="form-check-input"
+                           value="true"
+                            />
+
+                    <label for="AllowMultipleEmployees" class="form-check-label fw-bold">
+
+                        السماح بتعيين أكثر من موظف لنفس الوظيفة
+
+                    </label>
+
+                </div>
+
+                <!-- BUTTON -->
                 <div class="d-grid">
+
                     <button class="btn btn-success btn-save shadow-sm">
+
                         <i class="bi bi-check-circle-fill me-2"></i>
                         حفظ الدور
+
                     </button>
+
                 </div>
 
             </form>
@@ -51,25 +74,49 @@
     <div class="card shadow-sm page-card">
 
         <div class="card-header bg-dark text-white py-3">
+
             <h5 class="mb-0 fw-bold">
+
                 <i class="bi bi-diagram-3-fill me-2"></i>
                 الأدوار الحالية
+
             </h5>
+
         </div>
 
         <div class="card-body p-0">
 
             <div class="table-responsive">
 
-                <table id="example" class="table table-hover table-modern text-center">
+                <table id="example"
+                       class="table table-hover table-modern text-center">
 
                     <thead>
+
                         <tr>
-                            <th style="width:90px">#</th>
-                            <th>اسم الدور</th>
-                            <th style="width:180px">الحالة</th>
-                            <th>الإجراءات</th>
+
+                            <th style="width:90px">
+                                #
+                            </th>
+
+                            <th>
+                                اسم الدور
+                            </th>
+
+                            <th>
+                                نوع الوظيفة
+                            </th>
+
+                           @*  <th style="width:180px">
+                                الحالة
+                            </th> *@
+
+                            <th>
+                                الإجراءات
+                            </th>
+
                         </tr>
+
                     </thead>
 
                     <tbody>
@@ -80,51 +127,98 @@
                             {
                                 <tr>
 
+                                    <!-- ID -->
                                     <td>
-                                        <strong>@item.RoleId</strong>
+
+                                        <strong>
+                                            @item.RoleId
+                                        </strong>
+
                                     </td>
 
+                                    <!-- ROLE NAME -->
                                     <td class="fw-bold">
+
                                         @item.RoleName
+
                                     </td>
 
+                                    <!-- MULTIPLE -->
                                     <td>
-                                        <span class="role-badge">
-                                            مفعل
-                                        </span>
+
+                                        @if (item.AllowMultipleEmployees)
+                                        {
+                                            <span class="badge bg-success px-3 py-2">
+
+                                                متعدد الموظفين
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger px-3 py-2">
+
+                                                موظف واحد فقط
+
+                                            </span>
+                                        }
+
                                     </td>
+
+                                    <!-- STATUS -->
+                                   @*  <td>
+
+                                        <span class="role-badge">
+
+                                            مفعل
+
+                                        </span>
+
+                                    </td> *@
+
+                                    <!-- ACTIONS -->
                                     <td class="text-center">
 
                                         <div class="d-flex justify-content-center align-items-center gap-2">
 
                                             <a href="/Leave/EditRole/@item.RoleId"
                                                class="btn btn-primary btn-sm">
+
                                                 <i class="fas fa-edit"></i>
+
                                             </a>
 
                                             <a href="/Leave/DeleteRole/@item.RoleId"
                                                class="btn btn-danger btn-sm"
                                                onclick="return confirm('هل تريد الحذف؟')">
+
                                                 <i class="fas fa-trash"></i>
+
                                             </a>
 
                                         </div>
 
                                     </td>
+
                                 </tr>
                             }
                         }
                         else
                         {
                             <tr>
-                                <td colspan="3">
+
+                                <td colspan="5">
 
                                     <div class="empty-state">
+
                                         <i class="bi bi-inbox"></i>
+
                                         لا توجد أدوار مضافة حالياً
+
                                     </div>
 
                                 </td>
+
                             </tr>
                         }
 
@@ -139,16 +233,43 @@
     </div>
 
 </div>
-
-
-@if (TempData["SuccessMessage"] != null)
+@section Scripts
 {
-    <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'تم بنجاح',
-            text: '@TempData["SuccessMessage"]',
-            confirmButtonText: 'حسناً'
-        });
-    </script>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+
+            Swal.fire({
+
+                icon: 'success',
+
+                title: 'تم بنجاح',
+
+                html: '@TempData["SuccessMessage"]',
+
+                confirmButtonText: 'حسناً'
+
+            });
+
+        </script>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+
+            Swal.fire({
+
+                icon: 'error',
+
+                title: 'خطأ',
+
+                html: '@Html.Raw(TempData["ErrorMessage"])',
+
+                confirmButtonText: 'حسناً'
+
+            });
+
+        </script>
+    }
 }

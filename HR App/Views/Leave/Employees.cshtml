@@ -55,7 +55,10 @@
 
                         <th>تاريخ التعيين</th>
                         <th>تاريخ التأمين</th>
-
+                        <th>رصيد السنوي</th>
+                        <th>العارضة</th>
+                        <th>المرضي المستخدم</th>
+                        <th>آخر تحديث الرصيد</th>
                         <th>الحالة</th>
 
                     </tr>
@@ -76,7 +79,7 @@
                                     <i class="fas fa-edit"></i>
                                 </a>
 
-                                <a href="/Leave/EditEmployee?id=@item.EmployeeId"
+                                <a href="/Leave/DeleteEmployee?id=@item.EmployeeId"
                                    class="btn btn-sm btn-danger"
                                    onclick="return confirm('هل أنت متأكد من الحذف؟')">
                                     <i class="fas fa-trash"></i>
@@ -122,7 +125,20 @@
                             <td data-label="تاريخ التأمين">
                                 @item.InsuranceStartDate?.ToString("yyyy-MM-dd")
                             </td>
+                            <td data-label="الرصيد الثانوي">
+                                @item.AnnualLeaveBalance
+                            </td>
+                            <td data-label="العارضة">
+                                @item.CasualLeaveBalance
+                            </td>
 
+                            <td data-label="المرضي المستخدم">
+                                @item.SickLeaveUsedDays
+                            </td>
+
+                            <td data-label="آخر تحديث الرصيد">
+                                @item.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd")
+                            </td>
                             <!-- STATUS -->
                             <td data-label="الحالة">
 

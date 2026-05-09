@@ -29,13 +29,6 @@
                     <div class="employee-row border rounded-3 p-4 mb-4 bg-light">
 
                         <div class="row g-3">
-                           
-
-                            
-
-                           
-
-                                
                             <!-- Employee Code -->
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">
@@ -70,7 +63,7 @@
                             </div>
 
                             <!-- Role -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold">
                                     الدور الوظيفي
                                 </label>
@@ -93,7 +86,7 @@
                             </div>
 
                             <!-- Hire Date -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold">
                                     تاريخ التعيين
                                 </label>
@@ -103,7 +96,7 @@
                                        class="form-control hire-date" />
                             </div>
                             <!-- Hire Date -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold">
                                     تاريخ التأمين
                                 </label>
@@ -111,6 +104,28 @@
                                 <input type="date"
                                        name="Employees[0].InsuranceStartDate"
                                        class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label>رصيد الإجازة السنوي</label>
+                                <input type="number" name="Employees[0].AnnualLeaveBalance" class="form-control" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>العارضة</label>
+                                <input type="number" name="Employees[0].CasualLeaveBalance" class="form-control" value="7" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>الأيام المرضي المستخدمة</label>
+                                <input type="number" name="Employees[0].SickLeaveUsedDays" class="form-control" value="0" />
+                                <small class="text-muted">
+                                    الحد الأقصى 270 يوم (9 شهور)
+                                </small>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>آخر تحديث للرصيد الثانوي</label>
+                                <input type="date" name="Employees[0].LastLeaveBalanceUpdate" class="form-control" />
                             </div>
                            @*  <!-- Hire Date -->
                             <div class="col-md-6">
@@ -225,7 +240,7 @@
                 </div>
 
                 <!-- Role -->
-                <div class="col-md-6">
+                            <div class="col-md-4">
 
                     <label class="form-label fw-bold">
                         الدور الوظيفي <span class="text-danger">*</span>
@@ -245,7 +260,7 @@
                 </div>
 
                 <!-- Hire Date -->
-                <div class="col-md-6">
+                            <div class="col-md-4">
 
                     <label class="form-label fw-bold">
                         تاريخ التعيين <span class="text-danger">*</span>
@@ -258,7 +273,7 @@
                 </div>
 
                 <!-- Insurance -->
-                <div class="col-md-6">
+                            <div class="col-md-4">
 
                     <label class="form-label fw-bold">
                         تاريخ التأمين
@@ -269,7 +284,25 @@
                            class="form-control" />
 
                 </div>
+                 <div class="col-md-4">
+                                <label>رصيد الإجازة السنوي</label>
+                                <input type="number" name="Employees[${index}].AnnualLeaveBalance" class="form-control" />
+                            </div>
 
+                            <div class="col-md-4">
+                                <label>العارضة</label>
+                                <input type="number" name="Employees[${index}].CasualLeaveBalance" class="form-control" value="7" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>الأيام المرضي المستخدمة</label>
+                                <input type="number" name="Employees[${index}].SickLeaveUsedDays" class="form-control" value="0" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>آخر تحديث للرصيد الثانوي</label>
+                                <input type="date" name="Employees[${index}].LastLeaveBalanceUpdate" class="form-control" />
+                            </div>
             </div>
 
         </div>`;

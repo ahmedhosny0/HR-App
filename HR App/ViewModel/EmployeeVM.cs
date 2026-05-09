@@ -19,5 +19,9 @@
         public DateTime? InsuranceStartDate { get; set; }
         // ✅ الجديد
         public int? ParentRoleId { get; set; }
+        public decimal AnnualLeaveBalance { get; set; }
+        public decimal CasualLeaveBalance { get; set; } = 7;
+        public int SickLeaveUsedDays { get; set; }
+        public DateTime? LastLeaveBalanceUpdate { get; set; }
     }
 }
