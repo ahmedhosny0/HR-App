@@ -1,8 +1,10 @@
-﻿using HR_App.ViewModel;
+﻿using HR_App.Services;
+using HR_App.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Ocsp;
 using System.Data;
 
 namespace HR_App.Controllers
@@ -128,6 +130,7 @@ namespace HR_App.Controllers
         }
         #endregion Roles
 
+        #region RequestTypes
         public IActionResult RequestTypes()
         {
             List<RequestTypeVM> list = new List<RequestTypeVM>();
@@ -175,6 +178,75 @@ namespace HR_App.Controllers
 
             return RedirectToAction("RequestTypes");
         }
+        public IActionResult EditRequestType(int id)
+        {
+            RequestTypeVM model = null;
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string q = "SELECT RequestTypeId, Name FROM HR_RequestTypes WHERE RequestTypeId = @Id";
+                SqlCommand cmd = new SqlCommand(q, con);
+                cmd.Parameters.AddWithValue("@Id", id);
+
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    model = new RequestTypeVM
+                    {
+                        RequestTypeId = Convert.ToInt32(dr["RequestTypeId"]),
+                        Name = dr["Name"].ToString()
+                    };
+                }
+            }
+
+            return View(model);
+        }
+        [HttpPost]
+        public IActionResult EditRequestType(RequestTypeVM model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Name))
+                return BadRequest("اسم النوع مطلوب");
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string q = @"
+        UPDATE HR_RequestTypes
+        SET Name = @Name
+        WHERE RequestTypeId = @Id";
+
+                SqlCommand cmd = new SqlCommand(q, con);
+                cmd.Parameters.AddWithValue("@Name", model.Name);
+                cmd.Parameters.AddWithValue("@Id", model.RequestTypeId);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            TempData["SuccessMessage"] = "تم التعديل بنجاح";
+            return RedirectToAction("RequestTypes");
+        }
+        public IActionResult DeleteRequestType(int id)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string q = "DELETE FROM HR_RequestTypes WHERE RequestTypeId = @Id";
+                SqlCommand cmd = new SqlCommand(q, con);
+                cmd.Parameters.AddWithValue("@Id", id);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            TempData["SuccessMessage"] = "تم الحذف بنجاح";
+            return RedirectToAction("RequestTypes");
+        }
+        #endregion
+
         public IActionResult WorkflowSteps()
         {
             ViewBag.RequestTypes = new List<SelectListItem>();
@@ -331,34 +403,181 @@ namespace HR_App.Controllers
         [HttpPost]
         public IActionResult CreateEmployee(EmployeeBulkVM model)
         {
+            if (model?.Employees == null || !model.Employees.Any())
+            {
+                TempData["ErrorMessage"] = "لا يوجد موظفين للحفظ";
+                return RedirectToAction("CreateEmployee");
+            }
             using (SqlConnection con = new SqlConnection(connStr))
             {
                 con.Open();
 
+                // للتحقق من التكرار داخل نفس الفورم
+                var duplicateCodes = model.Employees
+                    .Where(x => !string.IsNullOrWhiteSpace(x.EmployeeCode))
+                    .GroupBy(x => x.EmployeeCode.Trim())
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                var duplicateNames = model.Employees
+                    .Where(x => !string.IsNullOrWhiteSpace(x.EmployeeName))
+                    .GroupBy(x => x.EmployeeName.Trim())
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                if (duplicateCodes.Any())
+                {
+                    TempData["ErrorMessage"] =
+                        "يوجد أكواد مكررة داخل الشاشة: <br>" +
+                        string.Join("<br>", duplicateCodes);
+
+                    LoadRoles();
+                    return View(model);
+                }
+
+                if (duplicateNames.Any())
+                {
+                    TempData["ErrorMessage"] =
+                        "يوجد أسماء مكررة داخل الشاشة: <br>" +
+                        string.Join("<br>", duplicateNames);
+
+                    LoadRoles();
+                    return View(model);
+                }
+
                 foreach (var emp in model.Employees)
                 {
+                    // تحقق من الكود
+                    string checkCode = @"
+            SELECT COUNT(*)
+            FROM HR_Employees
+            WHERE EmployeeCode = @Code";
+
+                    SqlCommand cmdCode = new SqlCommand(checkCode, con);
+                    cmdCode.Parameters.AddWithValue("@Code", emp.EmployeeCode ?? "");
+
+                    int codeExists = Convert.ToInt32(cmdCode.ExecuteScalar());
+
+                    if (codeExists > 0)
+                    {
+                        TempData["ErrorMessage"] =
+                            $"كود الموظف موجود بالفعل: {emp.EmployeeCode}";
+
+                        LoadRoles();
+                        return View(model);
+                    }
+
+                    // تحقق من الاسم
+                    string checkName = @"
+            SELECT COUNT(*)
+            FROM HR_Employees
+            WHERE EmployeeName = @Name";
+
+                    SqlCommand cmdName = new SqlCommand(checkName, con);
+                    cmdName.Parameters.AddWithValue("@Name", emp.EmployeeName ?? "");
+
+                    int nameExists = Convert.ToInt32(cmdName.ExecuteScalar());
+
+                    if (nameExists > 0)
+                    {
+                        TempData["ErrorMessage"] =
+                            $"اسم الموظف موجود بالفعل: {emp.EmployeeName}";
+
+                        LoadRoles();
+                        return View(model);
+                    }
+
+                    // INSERT
                     string insert = @"
             INSERT INTO HR_Employees
-            (EmployeeCode, EmployeeName, RoleId, JobTitle, HireDate, LeaveDate, IsActive, InsuranceStartDate, CreatedDate)
+            (
+                EmployeeCode,
+                EmployeeName,
+                RoleId,
+                JobTitle,
+                HireDate,
+                LeaveDate,
+                IsActive,
+                InsuranceStartDate,
+                CreatedDate
+            )
             VALUES
-            (@Code, @Name, @RoleId, @Job, @HireDate, @LeaveDate, @IsActive, @InsuranceStart, GETDATE())";
+            (
+                @Code,
+                @Name,
+                @RoleId,
+                @Job,
+                @HireDate,
+                @LeaveDate,
+                @IsActive,
+                @InsuranceStart,
+                GETDATE()
+            )";
 
                     SqlCommand cmd = new SqlCommand(insert, con);
 
-                    cmd.Parameters.AddWithValue("@Code", emp.EmployeeCode ?? "");
-                    cmd.Parameters.AddWithValue("@Name", emp.EmployeeName);
-                    cmd.Parameters.AddWithValue("@RoleId", (object?)emp.RoleId ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@Job", emp.JobTitle ?? "");
-                    cmd.Parameters.AddWithValue("@HireDate", emp.HireDate);
-                    cmd.Parameters.AddWithValue("@LeaveDate", (object?)emp.LeaveDate ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@InsuranceStart", (object?)emp.InsuranceStartDate ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@IsActive", emp.IsActive ? 1 : 0);
+                    cmd.Parameters.AddWithValue(
+     "@Code",
+     string.IsNullOrWhiteSpace(emp.EmployeeCode)
+         ? DBNull.Value
+         : (object)emp.EmployeeCode
+ );
+
+                    cmd.Parameters.AddWithValue(
+                        "@Name",
+                        string.IsNullOrWhiteSpace(emp.EmployeeName)
+                            ? DBNull.Value
+                            : (object)emp.EmployeeName
+                    );
+
+                    cmd.Parameters.AddWithValue(
+                        "@RoleId",
+                        emp.RoleId == null
+                            ? DBNull.Value
+                            : (object)emp.RoleId
+                    );
+
+                    cmd.Parameters.AddWithValue(
+                        "@Job",
+                        string.IsNullOrWhiteSpace(emp.JobTitle)
+                            ? DBNull.Value
+                            : (object)emp.JobTitle
+                    );
+
+                    cmd.Parameters.AddWithValue(
+                        "@HireDate",
+                        emp.HireDate == null || emp.HireDate == DateTime.MinValue
+                            ? DBNull.Value
+                            : (object)emp.HireDate
+                    );
+
+                    cmd.Parameters.AddWithValue(
+                        "@LeaveDate",
+                        emp.LeaveDate == null || emp.LeaveDate == DateTime.MinValue
+                            ? DBNull.Value
+                            : (object)emp.LeaveDate
+                    );
+
+                    cmd.Parameters.AddWithValue(
+                        "@InsuranceStart",
+                        emp.InsuranceStartDate == null || emp.InsuranceStartDate == DateTime.MinValue
+                            ? DBNull.Value
+                            : (object)emp.InsuranceStartDate
+                    );
+
+                    cmd.Parameters.AddWithValue(
+                        "@IsActive",
+                        (object)(emp.IsActive ? 1 : 0)
+                    );
 
                     cmd.ExecuteNonQuery();
                 }
             }
 
             TempData["SuccessMessage"] = "تم حفظ الموظفين بنجاح ✅";
+
             return RedirectToAction("CreateEmployee");
         }
         // =============================
@@ -379,6 +598,7 @@ Emp.EmployeeCode,
 Emp.EmployeeName,
 Emp.JobTitle,
 Emp.HireDate,
+Emp.InsuranceStartDate,
 Emp.IsActive,
 Role.RoleName
 FROM HR_Employees Emp
@@ -394,13 +614,35 @@ ORDER BY Emp.EmployeeId DESC";
                 {
                     list.Add(new EmployeeVM
                     {
-                        EmployeeId = Convert.ToInt32(dr["EmployeeId"]),
-                        EmployeeCode = dr["EmployeeCode"].ToString(),
-                        EmployeeName = dr["EmployeeName"].ToString(),
-                        JobTitle = dr["JobTitle"].ToString(),
-                        HireDate = Convert.ToDateTime(dr["HireDate"]),
-                        IsActive = Convert.ToBoolean(dr["IsActive"]),
-                        RoleName = dr["RoleName"].ToString()
+                        EmployeeId = dr["EmployeeId"] == DBNull.Value
+    ? 0
+    : Convert.ToInt32(dr["EmployeeId"]),
+
+                        EmployeeCode = dr["EmployeeCode"] == DBNull.Value
+    ? ""
+    : dr["EmployeeCode"].ToString(),
+
+                        EmployeeName = dr["EmployeeName"] == DBNull.Value
+    ? ""
+    : dr["EmployeeName"].ToString(),
+
+                        JobTitle = dr["JobTitle"] == DBNull.Value
+    ? ""
+    : dr["JobTitle"].ToString(),
+
+                        HireDate = dr["HireDate"] == DBNull.Value
+    ? (DateTime?)null
+    : Convert.ToDateTime(dr["HireDate"]),
+                        InsuranceStartDate = dr["InsuranceStartDate"] == DBNull.Value
+    ? (DateTime?)null
+    : Convert.ToDateTime(dr["InsuranceStartDate"]),
+
+                        IsActive = dr["IsActive"] != DBNull.Value
+    && Convert.ToBoolean(dr["IsActive"]),
+
+                        RoleName = dr["RoleName"] == DBNull.Value
+    ? ""
+    : dr["RoleName"].ToString()
                     });
                 }
             }
@@ -542,6 +784,7 @@ WHERE EmployeeId=@Id";
             return RedirectToAction("Employees");
         }
         #endregion Employee
+        #region EmployeeHierarchy
         public IActionResult EmployeeHierarchy()
         {
             ViewBag.Roles = new List<SelectListItem>();
@@ -715,6 +958,76 @@ WHERE EmployeeId=@Id";
 
             return list;
         }        // =========================
+        #endregion
+        private EmployeeDatesResult GetEmployeeDates(int empId)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string sql = @"
+            SELECT HireDate, InsuranceStartDate
+            FROM HR_Employees
+            WHERE EmployeeId = @EmpId";
+
+                SqlCommand cmd = new SqlCommand(sql, con);
+                cmd.Parameters.AddWithValue("@EmpId", empId);
+
+                using (var dr = cmd.ExecuteReader())
+                {
+                    if (dr.Read())
+                    {
+                        var hire = dr["HireDate"];
+                        var insurance = dr["InsuranceStartDate"];
+
+                        // ❌ لو HireDate فاضي = الموظف جديد
+                        if (hire == DBNull.Value)
+                        {
+                            return new EmployeeDatesResult
+                            {
+                                IsValid = false,
+                                Message = "لا يوجد تاريخ تعيين لهذا الموظف (موظف جديد أو بيانات ناقصة)"
+                            };
+                        }
+
+                        return new EmployeeDatesResult
+                        {
+                            IsValid = true,
+                            HireDate = Convert.ToDateTime(hire),
+                            InsuranceDate = insurance == DBNull.Value
+                                ? null
+                                : Convert.ToDateTime(insurance)
+                        };
+                    }
+                }
+            }
+
+            return new EmployeeDatesResult
+            {
+                IsValid = false,
+                Message = "الموظف غير موجود"
+            };
+        }
+        private int GetUsedLeaveDays(int empId)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string sql = @"
+            SELECT COUNT(*)
+            FROM HR_Requests
+            WHERE EmployeeId = @EmpId
+            AND RequestTypeId = 1
+            AND Status = 2"; // approved
+
+                SqlCommand cmd = new SqlCommand(sql, con);
+                cmd.Parameters.AddWithValue("@EmpId", empId);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
         public IActionResult CreateRequest()
         {
             var vm = new LeaveRequestVM();
@@ -767,70 +1080,218 @@ WHERE EmployeeId=@Id";
             using (SqlConnection con = new SqlConnection(connStr))
             {
                 con.Open();
-                // بنستخدم Transaction عشان نضمن إن الطلب وخطواته يتسجلوا مع بعض أو لا
+
                 using (SqlTransaction transaction = con.BeginTransaction())
                 {
                     try
                     {
-                        // 1. استعلام إدخال الطلب مع الحصول على الـ ID الجديد
+                        var policy = new LeavePolicyService();
+
+                        var datescheck = GetEmployeeDates(model.EmployeeId);
+
+                        if (!datescheck.IsValid)
+                        {
+                            TempData["ErrorMessage"] = datescheck.Message;
+                            return RedirectToAction("CreateRequest");
+                        }
+                        if (datescheck.HireDate == null)
+                        {
+                            TempData["ErrorMessage"] = "لا يمكن إنشاء إجازة قبل تحديد تاريخ التعيين";
+                            return RedirectToAction("CreateRequest");
+                        }
+                        if (datescheck.InsuranceDate == null)
+                        {
+                            TempData["ErrorMessage"] = "لا يمكن إنشاء إجازة قبل تحديد تاريخ التأمين";
+                            return RedirectToAction("CreateRequest");
+                        }
+
+                        int usedDays = GetUsedLeaveDays(model.EmployeeId);
+
+  
+                        List<string> insertedDays = new List<string>();
+                        List<string> duplicateDays = new List<string>();
+
+                        List<DateTime> dates = new List<DateTime>();
+
+                        // =========================
+                        // 1. تحديد الأيام
+                        // =========================
+                        if (model.IsMultipleDays && !string.IsNullOrEmpty(model.SelectedDays))
+                        {
+                            dates = model.SelectedDays
+                                .Split(',')
+                                .Select(x => DateTime.Parse(x.Trim()).Date)
+                                .Distinct()
+                                .ToList();
+                        }
+                        else
+                        {
+                            if (model.FromDate == null || model.ToDate == null)
+                            {
+                                TempData["ErrorMessage"] = "يجب إدخال التواريخ";
+                                return RedirectToAction("CreateRequest");
+                            }
+
+                            if (model.ToDate < model.FromDate)
+                            {
+                                TempData["ErrorMessage"] = "تاريخ النهاية قبل البداية";
+                                return RedirectToAction("CreateRequest");
+                            }
+
+                            dates = Enumerable.Range(0, (model.ToDate.Value - model.FromDate.Value).Days + 1)
+                                .Select(d => model.FromDate.Value.AddDays(d))
+                                .ToList();
+                        }
+
+                        // =========================
+                        // 2. Check duplicates
+                        // =========================
+                        var paramNames = dates.Select((d, i) => "@d" + i).ToList();
+
+                        string checkQuery = $@"
+                    SELECT CAST(FromDate AS DATE)
+                    FROM HR_Requests
+                    WHERE EmployeeId = @EmpId
+                    AND RequestTypeId = @TypeId
+                    AND CAST(FromDate AS DATE) IN ({string.Join(",", paramNames)})";
+
+                        SqlCommand checkCmd = new SqlCommand(checkQuery, con, transaction);
+                        checkCmd.Parameters.AddWithValue("@EmpId", model.EmployeeId);
+                        checkCmd.Parameters.AddWithValue("@TypeId", model.RequestTypeId);
+
+                        for (int i = 0; i < dates.Count; i++)
+                        {
+                            checkCmd.Parameters.AddWithValue(paramNames[i], dates[i]);
+                        }
+
+                        HashSet<DateTime> existingDates = new HashSet<DateTime>();
+
+                        using (var reader = checkCmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                existingDates.Add(Convert.ToDateTime(reader[0]).Date);
+                            }
+                        }
+
+                        // =========================
+                        // 3. Insert Request
+                        // =========================
                         string insertRequest = @"
-                    INSERT INTO HR_Requests 
+                    INSERT INTO HR_Requests
                     (RequestTypeId, EmployeeId, FromDate, ToDate, Notes, Status, CurrentStep, CreatedDate)
-                    VALUES 
+                    VALUES
                     (@TypeId, @EmpId, @FromDate, @ToDate, @Notes, 0, 1, GETDATE());
-                    SELECT SCOPE_IDENTITY();"; // لجلب رقم الطلب اللي اتعمل حالا
 
-                        SqlCommand cmd = new SqlCommand(insertRequest, con, transaction);
-                        cmd.Parameters.AddWithValue("@TypeId", model.RequestTypeId);
-                        cmd.Parameters.AddWithValue("@EmpId", model.EmployeeId);
-                        cmd.Parameters.AddWithValue("@FromDate", (object?)model.FromDate ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@ToDate", (object?)model.ToDate ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Notes", model.Notes ?? "");
+                    SELECT SCOPE_IDENTITY();";
 
-                        // الحصول على رقم الطلب
-                        int newRequestId = Convert.ToInt32(cmd.ExecuteScalar());
+                        SqlCommand insertCmd = new SqlCommand(insertRequest, con, transaction);
+                        insertCmd.Parameters.Add("@TypeId", SqlDbType.Int).Value = model.RequestTypeId;
+                        insertCmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = model.EmployeeId;
+                        insertCmd.Parameters.Add("@FromDate", SqlDbType.Date);
+                        insertCmd.Parameters.Add("@ToDate", SqlDbType.Date);
+                        insertCmd.Parameters.Add("@Notes", SqlDbType.NVarChar).Value = model.Notes ?? "";
 
-                        // 2. استعلام الـ Recursive CTE لإدخال خطوات الموافقة أوتوماتيكياً
-                        string insertApprovals = @"
-                    WITH RequestPath AS (
-                        SELECT h.ChildRoleId, h.ParentRoleId, 1 AS StepLevel
-                        FROM HR_Employees e
-                        INNER JOIN HR_EmployeeHierarchy h ON e.RoleId = h.ChildRoleId
-                        WHERE e.EmployeeId = @EmpId
-                        UNION ALL
-                        SELECT h.ChildRoleId, h.ParentRoleId, rp.StepLevel + 1
-                        FROM HR_EmployeeHierarchy h
-                        INNER JOIN RequestPath rp ON h.ChildRoleId = rp.ParentRoleId
-                    )
-                    INSERT INTO HR_RequestApprovals (RequestId, StepOrder, ApproverId, Status)
-                    SELECT 
-                        @RequestId,
-                        rp.StepLevel,
-                        e.EmployeeId,
-                        CASE WHEN rp.StepLevel = 1 THEN 1 ELSE 0 END -- أول خطوة بتبقى Pending (1)
-                    FROM RequestPath rp
-                    INNER JOIN HR_Employees e ON rp.ParentRoleId = e.RoleId
-                    WHERE e.IsActive = 1;";
+                        // =========================
+                        // 4. Loop insert + approvals
+                        // =========================
+                        foreach (var date in dates)
+                        {
+                            if (existingDates.Contains(date))
+                            {
+                                duplicateDays.Add(date.ToString("yyyy-MM-dd"));
+                                continue;
+                            }
+                            var check = policy.Validate(
+      model.RequestTypeId,
+      date,
+      date,
+      datescheck.HireDate.Value,
+      datescheck.InsuranceDate ?? datescheck.HireDate.Value, // fallback
+      usedDays
+  );
 
-                        SqlCommand cmdApprovals = new SqlCommand(insertApprovals, con, transaction);
-                        cmdApprovals.Parameters.AddWithValue("@RequestId", newRequestId);
-                        cmdApprovals.Parameters.AddWithValue("@EmpId", model.EmployeeId);
+                            if (!check.IsValid)
+                            {
+                                TempData["ErrorMessage"] = check.Message;
+                                return RedirectToAction("CreateRequest");
+                            }
+                            insertCmd.Parameters["@FromDate"].Value = date;
+                            insertCmd.Parameters["@ToDate"].Value = date;
 
-                        cmdApprovals.ExecuteNonQuery();
+                            int requestId = Convert.ToInt32(insertCmd.ExecuteScalar());
 
-                        transaction.Commit(); // حفظ التغييرات
-                        TempData["SuccessMessage"] = "تم إنشاء الطلب وتحديد مسار الموافقات بنجاح ✅";
+                            // =========================
+                            // 5. INSERT APPROVAL FLOW
+                            // =========================
+                            string approvalSql = @"
+                        WITH RequestPath AS (
+                            SELECT h.ChildRoleId, h.ParentRoleId, 1 AS StepLevel
+                            FROM HR_Employees e
+                            INNER JOIN HR_EmployeeHierarchy h 
+                                ON e.RoleId = h.ChildRoleId
+                            WHERE e.EmployeeId = @EmpId
+
+                            UNION ALL
+
+                            SELECT h.ChildRoleId, h.ParentRoleId, rp.StepLevel + 1
+                            FROM HR_EmployeeHierarchy h
+                            INNER JOIN RequestPath rp 
+                                ON h.ChildRoleId = rp.ParentRoleId
+                        )
+                        INSERT INTO HR_RequestApprovals
+                        (RequestId, StepOrder, ApproverId, Status)
+                        SELECT 
+                            @RequestId,
+                            rp.StepLevel,
+                            e.EmployeeId,
+                            CASE WHEN rp.StepLevel = 1 THEN 1 ELSE 0 END
+                        FROM RequestPath rp
+                        INNER JOIN HR_Employees e 
+                            ON rp.ParentRoleId = e.RoleId
+                        WHERE e.IsActive = 1;";
+
+                            SqlCommand approvalCmd = new SqlCommand(approvalSql, con, transaction);
+                            approvalCmd.Parameters.AddWithValue("@RequestId", requestId);
+                            approvalCmd.Parameters.AddWithValue("@EmpId", model.EmployeeId);
+
+                            approvalCmd.ExecuteNonQuery();
+
+                            insertedDays.Add(date.ToString("yyyy-MM-dd"));
+                        }
+
+                        // =========================
+                        // 6. Result
+                        // =========================
+                        if (insertedDays.Count == 0)
+                        {
+                            transaction.Rollback();
+
+                            TempData["ErrorMessage"] =
+                                "❌ لم يتم حفظ أي طلب لأن الأيام مكررة:<br>" +
+                                string.Join("<br>", duplicateDays);
+
+                            return RedirectToAction("CreateRequest");
+                        }
+
+                        transaction.Commit();
+
+                        TempData["SuccessMessage"] =
+                            $"تم حفظ {insertedDays.Count} طلب بنجاح<br>" +
+                            (duplicateDays.Any()
+                                ? "⚠️ تم تجاهل: " + string.Join(" , ", duplicateDays)
+                                : "");
+
+                        return RedirectToAction("CreateRequest");
                     }
                     catch (Exception ex)
                     {
-                        transaction.Rollback(); // إلغاء كل شيء في حال حدوث خطأ
-                        ModelState.AddModelError("", "حدث خطأ أثناء الحفظ: " + ex.Message);
-                        return View(model);
+                        transaction.Rollback();
+                        TempData["ErrorMessage"] = "حدث خطأ أثناء الحفظ ❌";
+                        return RedirectToAction("CreateRequest");
                     }
                 }
             }
-
-            return RedirectToAction("CreateRequest");
         }
         public IActionResult PendingApprovals()
         {

@@ -8,7 +8,6 @@
 <link rel="stylesheet" type="text/css" href="/css/base.css" />
 <link href="/css/lib/select2.min.css" rel="stylesheet" />
 <link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
-
 <div class="container mt-5">
 
     <div class="card shadow-sm border-0" style="border-radius:15px;">
@@ -30,16 +29,22 @@
                     <div class="employee-row border rounded-3 p-4 mb-4 bg-light">
 
                         <div class="row g-3">
+                           
 
+                            
+
+                           
+
+                                
                             <!-- Employee Code -->
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">
                                     كود الموظف
                                 </label>
 
-                                <input name="Employees[0].EmployeeCode"
-                                       class="form-control"
-                                       placeholder="ادخل كود الموظف" />
+                                    <input name="Employees[0].EmployeeCode"
+                                           class="form-control employee-code"
+                                           placeholder="ادخل كود الموظف" />
                             </div>
 
                             <!-- Employee Name -->
@@ -48,9 +53,9 @@
                                     اسم الموظف
                                 </label>
 
-                                <input name="Employees[0].EmployeeName"
-                                       class="form-control"
-                                       placeholder="ادخل اسم الموظف" />
+                                    <input name="Employees[0].EmployeeName"
+                                           class="form-control employee-name"
+                                           placeholder="ادخل اسم الموظف" />
                             </div>
 
                             <!-- Job Title -->
@@ -71,7 +76,7 @@
                                 </label>
 
                                 <select name="Employees[0].RoleId"
-                                        class="form-select select2">
+                                        class="form-select select2 role-select">
 
                                     <option value="">
                                         اختر الدور
@@ -95,8 +100,28 @@
 
                                 <input type="date"
                                        name="Employees[0].HireDate"
+                                       class="form-control hire-date" />
+                            </div>
+                            <!-- Hire Date -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    تاريخ التأمين
+                                </label>
+
+                                <input type="date"
+                                       name="Employees[0].InsuranceStartDate"
                                        class="form-control" />
                             </div>
+                           @*  <!-- Hire Date -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    تاريخ انتهاء العمل بالشركه
+                                </label>
+
+                                <input type="date"
+                                       name="Employees[0].HireDate"
+                                       class="form-control" />
+                            </div> *@
 
                         </div>
 
@@ -135,6 +160,10 @@
 <script src="/js/lib/select2.min.js"></script>
 <script src="/js/lib/sweetalert2@11.js"></script>
 
+<script src="/js/lib/jquery-3.6.0.min.js"></script>
+<script src="/js/lib/select2.min.js"></script>
+<script src="/js/lib/sweetalert2@11.js"></script>
+
 <script>
 
     $('.select2').select2();
@@ -145,31 +174,46 @@
 
         let html = `
 
-        <div class="employee-row border rounded-3 p-4 mb-4 bg-light">
+        <div class="employee-row border rounded-3 p-4 mb-4 bg-light position-relative">
+
+            <button type="button"
+                    class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 remove-row">
+
+                <i class="bi bi-trash"></i>
+
+            </button>
 
             <div class="row g-3">
 
+                <!-- Employee Code -->
                 <div class="col-md-4">
+
                     <label class="form-label fw-bold">
-                        كود الموظف
+                        كود الموظف <span class="text-danger">*</span>
                     </label>
 
                     <input name="Employees[${index}].EmployeeCode"
-                           class="form-control"
+                           class="form-control employee-code"
                            placeholder="ادخل كود الموظف" />
+
                 </div>
 
+                <!-- Employee Name -->
                 <div class="col-md-4">
+
                     <label class="form-label fw-bold">
-                        اسم الموظف
+                        اسم الموظف <span class="text-danger">*</span>
                     </label>
 
                     <input name="Employees[${index}].EmployeeName"
-                           class="form-control"
+                           class="form-control employee-name"
                            placeholder="ادخل اسم الموظف" />
+
                 </div>
 
+                <!-- Job -->
                 <div class="col-md-4">
+
                     <label class="form-label fw-bold">
                         الوظيفة
                     </label>
@@ -177,15 +221,18 @@
                     <input name="Employees[${index}].JobTitle"
                            class="form-control"
                            placeholder="ادخل الوظيفة" />
+
                 </div>
 
+                <!-- Role -->
                 <div class="col-md-6">
+
                     <label class="form-label fw-bold">
-                        الدور الوظيفي
+                        الدور الوظيفي <span class="text-danger">*</span>
                     </label>
 
                     <select name="Employees[${index}].RoleId"
-                            class="form-select dynamic-role">
+                            class="form-select dynamic-role role-select">
 
                         <option value="">
                             اختر الدور
@@ -194,16 +241,33 @@
                         ${document.querySelector('select[name="Employees[0].RoleId"]').innerHTML}
 
                     </select>
+
                 </div>
 
+                <!-- Hire Date -->
                 <div class="col-md-6">
+
                     <label class="form-label fw-bold">
-                        تاريخ التعيين
+                        تاريخ التعيين <span class="text-danger">*</span>
                     </label>
 
                     <input type="date"
                            name="Employees[${index}].HireDate"
+                           class="form-control hire-date" />
+
+                </div>
+
+                <!-- Insurance -->
+                <div class="col-md-6">
+
+                    <label class="form-label fw-bold">
+                        تاريخ التأمين
+                    </label>
+
+                    <input type="date"
+                           name="Employees[${index}].InsuranceStartDate"
                            class="form-control" />
+
                 </div>
 
             </div>
@@ -218,6 +282,150 @@
         index++;
     }
 
+    // حذف صف
+    $(document).on('click', '.remove-row', function () {
+
+        $(this).closest('.employee-row').remove();
+
+    });
+
+    // Validation
+    $('#employeeForm').on('submit', function (e) {
+
+        let isValid = true;
+
+        let codes = [];
+        let names = [];
+
+        $('.employee-row').each(function () {
+
+            let row = $(this);
+
+            let code = row.find('.employee-code').val()?.trim();
+            let name = row.find('.employee-name').val()?.trim();
+            let hireDate = row.find('.hire-date').val();
+                let role = row.find('.role-select').val();
+
+    // remove old error
+    row.find('.role-select')
+        .next('.select2')
+        .find('.select2-selection')
+        .removeClass('is-invalid');
+
+    // validation
+    if (!role) {
+        isValid = false;
+
+        let select2Container = row.find('.role-select').next('.select2');
+
+        select2Container.find('.select2-selection')
+            .addClass('is-invalid');
+    }
+            // إزالة الـ invalid
+            row.find('.form-control, .form-select')
+                .removeClass('is-invalid');
+
+            // Employee Code
+            if (!code) {
+
+                isValid = false;
+
+                row.find('.employee-code')
+                    .addClass('is-invalid');
+            }
+
+            // Duplicate Code
+            if (code) {
+
+                let lowerCode = code.toLowerCase();
+
+                if (codes.includes(lowerCode)) {
+
+                    isValid = false;
+
+                    row.find('.employee-code')
+                        .addClass('is-invalid');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يوجد كود موظف مكرر داخل الشاشة'
+                    });
+
+                    return false;
+                }
+
+                codes.push(lowerCode);
+            }
+
+            // Employee Name
+            if (!name) {
+
+                isValid = false;
+
+                row.find('.employee-name')
+                    .addClass('is-invalid');
+            }
+
+            // Duplicate Name
+            if (name) {
+
+                let lowerName = name.toLowerCase();
+
+                if (names.includes(lowerName)) {
+
+                    isValid = false;
+
+                    row.find('.employee-name')
+                        .addClass('is-invalid');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يوجد اسم موظف مكرر داخل الشاشة'
+                    });
+
+                    return false;
+                }
+
+                names.push(lowerName);
+            }
+
+            // Role
+            if (!role) {
+
+                isValid = false;
+
+                row.find('.role-select')
+                    .addClass('is-invalid');
+            }
+
+            // Hire Date
+            if (!hireDate) {
+
+                isValid = false;
+
+                row.find('.hire-date')
+                    .addClass('is-invalid');
+            }
+
+        });
+
+        if (!isValid) {
+
+            e.preventDefault();
+
+            Swal.fire({
+                icon: 'error',
+                title: 'بيانات ناقصة',
+                text: 'من فضلك أكمل جميع الحقول المطلوبة'
+            });
+
+            return false;
+        }
+
+    });
+
 </script>
 
 @if (TempData["SuccessMessage"] != null)
@@ -226,7 +434,17 @@
         Swal.fire({
             icon: 'success',
             title: 'تم بنجاح',
-            text: '@TempData["SuccessMessage"]'
+            html: '@TempData["SuccessMessage"]'
+        });
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            html: '@Html.Raw(TempData["ErrorMessage"])'
         });
     </script>
 }

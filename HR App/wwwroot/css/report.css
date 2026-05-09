@@ -14,9 +14,10 @@
     .table-modern th {
         padding: 12px;
         font-size: 13px;
-        color: #fff;
+        color: #fff !important;
         border-bottom: 1px solid #374151;
         text-align: right;
+        background-color : #1f2934 !important;
     }
 
     .table-modern td {
@@ -28,6 +29,10 @@
     .table-modern tbody tr:hover {
         background: rgba(0, 0, 0, 0.05);
     }
+.table-responsive {
+    background-color: white !important;
+    padding:2%;
+}
 
 /* =======================
    REPORT ACTIONS

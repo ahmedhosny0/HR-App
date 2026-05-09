@@ -11,7 +11,7 @@
         public int? RoleId { get; set; }
         public string JobTitle { get; set; }
 
-        public DateTime HireDate { get; set; }
+        public DateTime? HireDate { get; set; }
         public DateTime? LeaveDate { get; set; }
 
         public bool IsActive { get; set; } = true;

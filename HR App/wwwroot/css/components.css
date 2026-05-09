@@ -170,3 +170,7 @@
         width: 100% !important;
     }
 }
+.select2-container--default .select2-selection.is-invalid {
+    border: 1px solid red !important;
+    border-radius: 4px !important;
+}

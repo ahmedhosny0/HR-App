@@ -16,5 +16,7 @@ namespace HR_App.ViewModel
 
         public int Status { get; set; }
         public int CurrentStep { get; set; }
+        public bool IsMultipleDays { get; set; }
+        public string? SelectedDays { get; set; }
     }
 }

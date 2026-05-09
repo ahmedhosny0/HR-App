@@ -64,9 +64,17 @@
                     <input type="date"
                            name="HireDate"
                            class="form-control"
-                           value="@Model.HireDate.ToString("yyyy-MM-dd")" />
-                </div>
+                           value="@(Model.HireDate?.ToString("yyyy-MM-dd"))" />
 
+                </div>
+                <div class="mb-3">
+                    <label>تاريخ التأمين</label>
+
+                    <input type="date"
+                           name="InsuranceStartDate"
+                           class="form-control"
+                           value="@(Model.InsuranceStartDate?.ToString("yyyy-MM-dd"))"    />
+                </div>
                 <div class="form-check mb-3">
 
                     <input type="checkbox"

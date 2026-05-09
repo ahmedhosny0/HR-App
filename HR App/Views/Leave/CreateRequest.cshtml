@@ -97,7 +97,33 @@
                                name="ToDate"
                                class="form-control" />
                     </div>
+                    <div class="mb-3 form-check form-switch mt-3">
 
+                        <input type="hidden" name="IsMultipleDays" id="IsMultipleDaysHidden" value="false" />
+
+                        <input class="form-check-input" type="checkbox" id="isMultipleDays">
+
+                        <label class="form-check-label fw-bold">
+                            إجازة لأيام متفرقة؟
+                        </label>
+
+                    </div>
+                    <!-- Multiple Days Section -->
+                    <div id="multipleDaysSection" class="mt-3" style="display:none;">
+
+                        <label class="form-label fw-bold">
+                            اختر أيام الإجازة
+                        </label>
+
+                        <input type="text"
+                               id="SelectedDays"
+                               name="SelectedDays"
+                               class="form-control"
+                               placeholder="اختر أكثر من يوم" />
+
+                        <div id="selectedDaysPreview" class="mt-2 d-flex flex-wrap gap-2"></div>
+
+                    </div>
                     <!-- Notes -->
                     <div class="col-12">
                         <label class="form-label fw-bold">
@@ -134,7 +160,96 @@
 <script src="/js/lib/sweetalert2@11.js"></script>
 
 <script>
+        $(document).ready(function () {
 
+        // Flatpickr (Multiple Days)
+        flatpickr("#SelectedDays", {
+            mode: "multiple",
+            dateFormat: "Y-m-d",
+            minDate: "today",
+
+            onChange: function (selectedDates) {
+
+                let container = document.getElementById("selectedDaysPreview");
+                container.innerHTML = "";
+
+                selectedDates.forEach(d => {
+
+                    let date = d.toISOString().split('T')[0];
+
+                    let tag = document.createElement("span");
+                    tag.className = "badge bg-primary p-2";
+                    tag.innerText = date;
+
+                    container.appendChild(tag);
+                });
+            }
+        });
+
+        // Toggle
+        $('#isMultipleDays').on('change', function () {
+
+            let isChecked = $(this).is(':checked');
+
+            $('#IsMultipleDaysHidden').val(isChecked);
+
+            if (isChecked) {
+
+                $('#multipleDaysSection').show();
+
+                $('#FromDate, #ToDate').attr('disabled', true);
+
+            } else {
+
+                $('#multipleDaysSection').hide();
+
+                $('#FromDate, #ToDate').attr('disabled', false);
+            }
+        });
+
+        // Validation on submit
+        $('#requestForm').on('submit', function (e) {
+
+            let isMultiple = $('#isMultipleDays').is(':checked');
+
+            if (isMultiple) {
+
+                let selected = $('#SelectedDays').val();
+
+                if (!selected || selected.length === 0) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يجب اختيار يوم واحد على الأقل'
+                    });
+
+                    return;
+                }
+            }
+            else {
+
+                let fromDate = $('#FromDate').val();
+                let toDate = $('#ToDate').val();
+
+                if (toDate && fromDate && toDate < fromDate) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'تاريخ النهاية لا يمكن أن يكون قبل البداية'
+                    });
+
+                    return;
+                }
+            }
+        });
+
+    });
     $(document).ready(function () {
 
         $('.select2').select2();
@@ -169,7 +284,7 @@
             Swal.fire({
                 icon: 'success',
                 title: 'تم بنجاح',
-                text: success,
+                html: success,
                 confirmButtonText: 'حسناً'
             });
 
@@ -183,7 +298,7 @@
             Swal.fire({
                 icon: 'error',
                 title: 'خطأ',
-                text: error,
+                html: error,
                 confirmButtonText: 'إغلاق'
             });
 

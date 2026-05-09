@@ -4,92 +4,18 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<link rel="stylesheet" type="text/css" href="/css/components.css" />
-<link rel="stylesheet" type="text/css" href="/css/report.css" />
-<link rel="stylesheet" type="text/css" href="/css/base.css" />
-<link href="/css/lib/bootstrap.min.css" rel="stylesheet">
-<link href="/css/lib/select2.min.css" rel="stylesheet" />
 
-<style>
-    .page-card {
-        border: none;
-        border-radius: 18px;
-        overflow: hidden;
-    }
-
-    .page-header {
-        background: linear-gradient(135deg, #0d6efd, #0b5ed7);
-        padding: 18px;
-    }
-
-        .page-header h5 {
-            margin: 0;
-            font-weight: 700;
-            color: #fff;
-        }
-
-    .form-control,
-    .form-select {
-        border-radius: 12px;
-        min-height: 45px;
-        border: 1px solid #dbe2ea;
-    }
-
-        .form-control:focus,
-        .form-select:focus {
-            box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
-            border-color: #86b7fe;
-        }
-
-    .btn-save {
-        border-radius: 12px;
-        height: 48px;
-        font-weight: 700;
-        font-size: 15px;
-    }
-
-    .table-modern {
-        vertical-align: middle;
-        margin-bottom: 0;
-    }
-
-        .table-modern thead {
-            background: #f8f9fa;
-        }
-
-        .table-modern th {
-            font-weight: 700;
-            border-bottom-width: 1px;
-            white-space: nowrap;
-        }
-
-    .badge-custom {
-        background: rgba(13,110,253,.1);
-        color: #0d6efd;
-        padding: 6px 12px;
-        border-radius: 50px;
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 30px;
-        color: #777;
-    }
-</style>
-
-<div class="container mt-5" style="direction:rtl">
+<div class="container mt-4">
 
     <!-- إضافة نوع الطلب -->
     <div class="card shadow-sm page-card mb-4">
-
-        <div class="page-header">
-            <h5>
-                <i class="bi bi-plus-circle-fill me-2"></i>
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-people-fill me-2"></i>
                 إضافة نوع طلب جديد
             </h5>
         </div>
+
 
         <div class="card-body p-4">
 
@@ -134,13 +60,13 @@
 
             <div class="table-responsive">
 
-                <table class="table table-hover table-modern text-center">
-
+                <table id="example" class="table table-hover table-modern text-center">
                     <thead>
                         <tr>
                             <th style="width:80px">#</th>
                             <th>اسم النوع</th>
                             <th style="width:180px">الحالة</th>
+                            <th >الإجراء</th>
                         </tr>
                     </thead>
 
@@ -163,6 +89,18 @@
                                         <span class="badge-custom">
                                             مفعل
                                         </span>
+                                    </td>
+                                    <td>
+                                        <a href="/Leave/EditRequestType?id=@item.RequestTypeId"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <a href="/Leave/DeleteRequestType?id=@item.RequestTypeId"
+                                           class="btn btn-sm btn-danger"
+                                           onclick="return confirm('هل أنت متأكد من الحذف؟')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
                                     </td>
                                 </tr>
                             }
@@ -193,17 +131,19 @@
 
 </div>
 
-<script src="/js/lib/jquery-3.6.0.min.js"></script>
-<script src="/js/lib/sweetalert2@11.js"></script>
-
-@if (TempData["SuccessMessage"] != null)
+@section Scripts
 {
-    <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'تم بنجاح',
-            text: '@TempData["SuccessMessage"]',
-            confirmButtonText: 'حسناً'
-        });
+
     </script>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح',
+                html: '@TempData["SuccessMessage"]',
+                confirmButtonText: 'حسناً'
+            });
+        </script>
+    }
 }

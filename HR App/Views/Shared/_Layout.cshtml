@@ -17,6 +17,8 @@
     <link href="/css/lib/datatables.min.css" rel="stylesheet">
     <link href="/css/lib/css2.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/lib/flatpickr.min.css">
+
 
     <script>
         // تمييز الرابط النشط
@@ -56,7 +58,6 @@
                     <a href="#" class="nav-link">تقارير</a>
                     <div class="dropdown-menu">
                         <a href="/Leave/Employees" class="dropdown-item">الموظفين</a>
-                        <a href="/Evaluation/GetAllEvaluations" class="dropdown-item">كل التقييمات</a>
                     </div>
                 </div>  
                 <div class="nav-item ">
@@ -131,7 +132,34 @@
     <script src="/js/lib/pdfmake.min.js"></script>
     <script src="/js/lib/vfs_fonts.js"></script>
     <script src="~/js/layout.js"></script>
+    <script src="/js/lib/flatpickr.js"></script>
+    <!-- DATATABLE -->
+    <script>
 
+              $(document).ready(function () {
+
+            $('#example').DataTable({
+
+                pageLength: 15,
+                lengthChange: true,
+                responsive: true,
+
+                dom: 'Bfrtip',
+
+                buttons: [
+
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export To Excel'
+                    }
+
+                ]
+
+            });
+
+        });
+
+    </script>
     <script>
                 var username = '@ViewBag.Username';
                 var isUsername = '@ViewBag.isUsername';

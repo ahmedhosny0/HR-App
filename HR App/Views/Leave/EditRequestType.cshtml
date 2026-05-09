@@ -1,0 +1,73 @@
+﻿@model HR_App.ViewModel.RequestTypeVM
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
+<link href="/css/lib/select2.min.css" rel="stylesheet" />
+
+<div class="container mt-5" style="direction:rtl">
+
+    <!-- تعديل نوع الطلب -->
+    <div class="card shadow-sm page-card">
+
+        <div class="page-header bg-primary text-white py-3 px-4">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-pencil-square me-2"></i>
+                تعديل نوع الطلب
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="post" action="/Leave/EditRequestType">
+
+                <!-- Hidden Id -->
+                <input type="hidden" name="RequestTypeId" value="@Model.RequestTypeId" />
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold mb-2">
+                        اسم نوع الطلب
+                    </label>
+
+                    <input type="text"
+                           name="Name"
+                           value="@Model.Name"
+                           class="form-control"
+                           placeholder="مثال: إجازة / مأمورية / إضافي"
+                           required />
+                </div>
+
+                <div class="d-grid">
+                    <button class="btn btn-primary btn-save shadow-sm">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        حفظ التعديل
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="/js/lib/jquery-3.6.0.min.js"></script>
+<script src="/js/lib/sweetalert2@11.js"></script>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'تم بنجاح',
+            text: '@TempData["SuccessMessage"]',
+            confirmButtonText: 'حسناً'
+        });
+    </script>
+}
