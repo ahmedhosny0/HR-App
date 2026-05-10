@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Ocsp;
 using System.Data;
+using System.Security.Claims;
 
 namespace HR_App.Controllers
 {
@@ -906,7 +907,9 @@ ON Emp.RoleId = Role.RoleId
                         ? null
                         : Convert.ToInt32(dr["RoleId"]);
 
-                    model.HireDate = Convert.ToDateTime(dr["HireDate"]);
+                    model.HireDate = dr["HireDate"] == DBNull.Value
+    ? null
+    : Convert.ToDateTime(dr["HireDate"]); 
 
                     model.LeaveDate = dr["LeaveDate"] == DBNull.Value
                         ? null
@@ -1387,7 +1390,147 @@ WHERE EmployeeId = @Id";
                 return Convert.ToInt32(cmd.ExecuteScalar());
             }
         }
+        public JsonResult GetEmployeeLeaveBalance(int employeeId)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                string q = @"
+SELECT 
+    EmployeeName,
+    EmployeeCode,
 
+    AnnualLeaveBalance,
+    ISNULL(AnnualLeaveUsedDays,0) AnnualLeaveUsedDays,
+
+    CasualLeaveBalance,
+    ISNULL(CasualLeaveUsedDays,0) CasualLeaveUsedDays,
+
+    SickLeaveBalance,
+    ISNULL(SickLeaveUsedDays,0) SickLeaveUsedDays,
+
+    ExamLeaveBalance,
+    ISNULL(ExamLeaveUsedDays,0) ExamLeaveUsedDays
+
+FROM HR_Employees
+WHERE EmployeeId = @EmployeeId";
+
+                SqlCommand cmd = new SqlCommand(q, con);
+                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+
+                con.Open();
+
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    return Json(new
+                    {
+                        success = true,
+
+                        employeeName = dr["EmployeeName"].ToString(),
+                        employeeCode = dr["EmployeeCode"].ToString(),
+
+                        annualBalance = Convert.ToInt32(dr["AnnualLeaveBalance"]),
+                        annualUsed = Convert.ToInt32(dr["AnnualLeaveUsedDays"]),
+
+                        casualBalance = Convert.ToInt32(dr["CasualLeaveBalance"]),
+                        casualUsed = Convert.ToInt32(dr["CasualLeaveUsedDays"]),
+
+                        sickBalance = Convert.ToInt32(dr["SickLeaveBalance"]),
+                        sickUsed = Convert.ToInt32(dr["SickLeaveUsedDays"]),
+
+                        examBalance = Convert.ToInt32(dr["ExamLeaveBalance"]),
+                        examUsed = Convert.ToInt32(dr["ExamLeaveUsedDays"])
+                    });
+                }
+            }
+
+            return Json(new { success = false });
+        }
+        private (bool IsValid, string Message) CheckLeaveBalance(
+    int employeeId,
+    int requestTypeId,
+    int requestedDays)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string q = @"
+SELECT
+
+    AnnualLeaveBalance,
+    ISNULL(AnnualLeaveUsedDays,0) AnnualLeaveUsedDays,
+
+    CasualLeaveBalance,
+    ISNULL(CasualLeaveUsedDays,0) CasualLeaveUsedDays,
+
+    SickLeaveBalance,
+    ISNULL(SickLeaveUsedDays,0) SickLeaveUsedDays,
+
+    ExamLeaveBalance,
+    ISNULL(ExamLeaveUsedDays,0) ExamLeaveUsedDays
+
+FROM HR_Employees
+WHERE EmployeeId = @EmployeeId";
+
+                SqlCommand cmd = new SqlCommand(q, con);
+
+                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    int balance = 0;
+                    int used = 0;
+                    string leaveName = "";
+
+                    switch (requestTypeId)
+                    {
+                        case 1:
+                            balance = Convert.ToInt32(dr["AnnualLeaveBalance"]);
+                            used = Convert.ToInt32(dr["AnnualLeaveUsedDays"]);
+                            leaveName = "الاعتيادي";
+                            break;
+
+                        case 2:
+                            balance = Convert.ToInt32(dr["CasualLeaveBalance"]);
+                            used = Convert.ToInt32(dr["CasualLeaveUsedDays"]);
+                            leaveName = "العارضة";
+                            break;
+
+                        case 3:
+                            balance = Convert.ToInt32(dr["SickLeaveBalance"]);
+                            used = Convert.ToInt32(dr["SickLeaveUsedDays"]);
+                            leaveName = "المرضي";
+                            break;
+
+                        case 4:
+                            balance = Convert.ToInt32(dr["ExamLeaveBalance"]);
+                            used = Convert.ToInt32(dr["ExamLeaveUsedDays"]);
+                            leaveName = "الامتحانات";
+                            break;
+                    }
+
+                    int remaining = balance - used;
+
+                    if (requestedDays > remaining)
+                    {
+                        return
+                        (
+                            false,
+                            $"رصيد إجازة {leaveName} غير كافٍ<br>" +
+                            $"الرصيد المتبقي: {remaining} يوم"
+                        );
+                    }
+
+                    return (true, "");
+                }
+            }
+
+            return (false, "الموظف غير موجود");
+        }
         public IActionResult CreateRequest()
         {
             var vm = new LeaveRequestVM();
@@ -1395,37 +1538,86 @@ WHERE EmployeeId = @Id";
             var employees = new List<SelectListItem>();
             var types = new List<SelectListItem>();
 
+            dynamic emp = null;
+
+            var userId = ViewBag.UserName;
+
             using (SqlConnection con = new SqlConnection(connStr))
             {
                 con.Open();
 
-                // Employees
-                string q1 = "SELECT EmployeeId, EmployeeName FROM HR_Employees WHERE IsActive = 1";
-                SqlCommand cmd1 = new SqlCommand(q1, con);
-                SqlDataReader dr1 = cmd1.ExecuteReader();
+                // =========================
+                // Current Employee
+                // =========================
+                string qEmp = @"
+        SELECT EmployeeId, EmployeeName, EmployeeCode,
+               AnnualLeaveBalance, AnnualLeaveUsedDays,
+               CasualLeaveBalance, CasualLeaveUsedDays,
+               SickLeaveBalance, SickLeaveUsedDays,
+               ExamLeaveBalance, ExamLeaveUsedDays
+        FROM HR_Employees
+        WHERE EmployeeCode = @id";
 
-                while (dr1.Read())
+                SqlCommand cmdEmp = new SqlCommand(qEmp, con);
+                cmdEmp.Parameters.AddWithValue("@id", userId);
+
+                using (SqlDataReader dr = cmdEmp.ExecuteReader())
                 {
-                    employees.Add(new SelectListItem
+                    if (dr.Read())
                     {
-                        Value = dr1["EmployeeId"].ToString(),
-                        Text = dr1["EmployeeName"].ToString()
-                    });
+                        emp = new
+                        {
+                            EmployeeId = dr["EmployeeId"],
+                            EmployeeName = dr["EmployeeName"],
+                            EmployeeCode = dr["EmployeeCode"],
+                            AnnualBalance = dr["AnnualLeaveBalance"],
+                            AnnualUsed = dr["AnnualLeaveUsedDays"],
+                            CasualBalance = dr["CasualLeaveBalance"],
+                            CasualUsed = dr["CasualLeaveUsedDays"],
+                            SickBalance = dr["SickLeaveBalance"],
+                            SickUsed = dr["SickLeaveUsedDays"],
+                            ExamBalance = dr["ExamLeaveBalance"],
+                            ExamUsed = dr["ExamLeaveUsedDays"]
+                        };
+                    }
                 }
-                dr1.Close();
 
-                // Request Types
-                string q2 = "SELECT RequestTypeId, Name FROM HR_RequestTypes";
-                SqlCommand cmd2 = new SqlCommand(q2, con);
-                SqlDataReader dr2 = cmd2.ExecuteReader();
+                ViewBag.CurrentEmployee = emp;
 
-                while (dr2.Read())
+                // =========================
+                // Employees
+                // =========================
+                string q1 = "SELECT EmployeeId, EmployeeName FROM HR_Employees WHERE IsActive = 1";
+
+                SqlCommand cmd1 = new SqlCommand(q1, con);
+                using (SqlDataReader dr1 = cmd1.ExecuteReader())
                 {
-                    types.Add(new SelectListItem
+                    while (dr1.Read())
                     {
-                        Value = dr2["RequestTypeId"].ToString(),
-                        Text = dr2["Name"].ToString()
-                    });
+                        employees.Add(new SelectListItem
+                        {
+                            Value = dr1["EmployeeId"].ToString(),
+                            Text = dr1["EmployeeName"].ToString()
+                        });
+                    }
+                }
+
+                // =========================
+                // Request Types
+                // =========================
+                string q2 = "SELECT RequestTypeId, Name FROM HR_RequestTypes";
+
+                SqlCommand cmd2 = new SqlCommand(q2, con);
+                using (SqlDataReader dr2 = cmd2.ExecuteReader())
+                {
+                    while (dr2.Read())
+                    {
+                        types.Add(new SelectListItem
+                        {
+                            Value = dr2["RequestTypeId"].ToString(),
+                            Text = dr2["Name"].ToString()
+                        });
+                    }
                 }
             }
 
@@ -1502,7 +1694,19 @@ WHERE EmployeeId = @Id";
                                 .Select(d => model.FromDate.Value.AddDays(d))
                                 .ToList();
                         }
+                        int requestedDays = dates.Count;
 
+                        var balanceCheck = CheckLeaveBalance(
+                            model.EmployeeId,
+                            model.RequestTypeId,
+                            requestedDays
+                        );
+
+                        if (!balanceCheck.IsValid)
+                        {
+                            TempData["ErrorMessage"] = balanceCheck.Message;
+                            return RedirectToAction("CreateRequest");
+                        }
                         // =========================
                         // 2. Check duplicates
                         // =========================
@@ -1576,6 +1780,7 @@ WHERE EmployeeId = @Id";
                                 TempData["ErrorMessage"] = check.Message;
                                 return RedirectToAction("CreateRequest");
                             }
+                          
                             insertCmd.Parameters["@FromDate"].Value = date;
                             insertCmd.Parameters["@ToDate"].Value = date;
 

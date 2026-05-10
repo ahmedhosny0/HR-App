@@ -2,6 +2,9 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+@{
+    dynamic emp = ViewBag.CurrentEmployee;
+}
 
 <link rel="stylesheet" type="text/css" href="/css/components.css" />
 <link rel="stylesheet" type="text/css" href="/css/report.css" />
@@ -27,7 +30,139 @@
             <form method="post" id="requestForm">
 
                 <div class="row g-3">
+                    <div class="col-12">
+                        <div class="mb-3">
 
+                            <button type="button"
+                                    id="toggleBalanceBtn"
+                                    class="btn btn-outline-primary rounded-pill px-4">
+
+                                <i class="bi bi-eye-fill me-2"></i>
+                                عرض رصيد الاجازات
+
+                            </button>
+
+                        </div>
+                        <div id="leaveBalanceCard"
+                             class="card border-0 shadow-sm mt-2"
+                             style="display:none; border-radius:18px; overflow:hidden;">
+
+                            <div class="card-header text-white"
+                                 style="background:linear-gradient(45deg,#0d6efd,#198754);">
+
+                                <div class="d-flex justify-content-between align-items-center">
+
+                                    <div>
+                                        <h5 class="mb-1 fw-bold" id="empName"></h5>
+                                        <small id="empCode"></small>
+                                    </div>
+
+                                    <div>
+                                        <i class="bi bi-person-badge-fill fs-2"></i>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+
+                                <div class="row g-3">
+
+                                    <!-- Annual -->
+                                    <div class="col-md-3">
+                                        <div class="p-3 rounded bg-light text-center border">
+                                            <h6 class="fw-bold text-primary">الاعتيادي</h6>
+
+                                            <div>
+                                                <small>الرصيد:</small>
+                                                <strong id="annualBalance"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المستخدم:</small>
+                                                <strong id="annualUsed"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المتبقي:</small>
+                                                <strong id="annualRemain"></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Casual -->
+                                    <div class="col-md-3">
+                                        <div class="p-3 rounded bg-light text-center border">
+                                            <h6 class="fw-bold text-warning">العارضة</h6>
+
+                                            <div>
+                                                <small>الرصيد:</small>
+                                                <strong id="casualBalance"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المستخدم:</small>
+                                                <strong id="casualUsed"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المتبقي:</small>
+                                                <strong id="casualRemain"></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sick -->
+                                    <div class="col-md-3">
+                                        <div class="p-3 rounded bg-light text-center border">
+                                            <h6 class="fw-bold text-danger">المرضي</h6>
+
+                                            <div>
+                                                <small>الرصيد:</small>
+                                                <strong id="sickBalance"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المستخدم:</small>
+                                                <strong id="sickUsed"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المتبقي:</small>
+                                                <strong id="sickRemain"></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Exam -->
+                                    <div class="col-md-3">
+                                        <div class="p-3 rounded bg-light text-center border">
+                                            <h6 class="fw-bold text-success">الامتحانات</h6>
+
+                                            <div>
+                                                <small>الرصيد:</small>
+                                                <strong id="examBalance"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المستخدم:</small>
+                                                <strong id="examUsed"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>المتبقي:</small>
+                                                <strong id="examRemain"></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
                     <!-- Employee -->
                     <div class="col-md-6">
                         <label class="form-label fw-bold">
@@ -104,7 +239,7 @@
                         <input class="form-check-input" type="checkbox" id="isMultipleDays">
 
                         <label class="form-check-label fw-bold">
-                            إجازة لأيام متفرقة؟
+                            اجازة لأيام متفرقة؟
                         </label>
 
                     </div>
@@ -112,7 +247,7 @@
                     <div id="multipleDaysSection" class="mt-3" style="display:none;">
 
                         <label class="form-label fw-bold">
-                            اختر أيام الإجازة
+                            اختر أيام الاجازة
                         </label>
 
                         <input type="text"
@@ -306,4 +441,115 @@
 
     });
 
+</script>
+<script>
+    $(document).ready(function () {
+
+        var emp = @Html.Raw(Json.Serialize(ViewBag.CurrentEmployee));
+
+        let card = $('#leaveBalanceCard');
+        let btn = $('#toggleBalanceBtn');
+
+        let isVisible = false; // 👈 حالة العرض
+
+        // =========================
+        // INIT CURRENT USER (BUT HIDDEN)
+        // =========================
+        if (emp) {
+            fillCard(emp);
+        }
+
+        card.hide();
+
+        // =========================
+        // TOGGLE BUTTON
+        // =========================
+        $('#toggleBalanceBtn').on('click', function () {
+
+            isVisible = !isVisible;
+
+            if (isVisible) {
+                card.slideDown(200);
+                btn.html(`<i class="bi bi-eye-slash-fill me-2"></i> إخفاء رصيد الاجازات`);
+            } else {
+                card.slideUp(200);
+                btn.html(`<i class="bi bi-eye-fill me-2"></i> عرض رصيد الاجازات`);
+            }
+        });
+
+        // =========================
+        // EMPLOYEE CHANGE (IMPORTANT FIX)
+        // =========================
+        $('select[name="EmployeeId"]').on('change', function () {
+
+            let employeeId = $(this).val();
+
+            if (!employeeId) {
+                card.hide();
+                isVisible = false;
+                resetCard();
+                return;
+            }
+
+            $.ajax({
+                url: '/Leave/GetEmployeeLeaveBalance',
+                type: 'GET',
+                data: { employeeId: employeeId },
+
+                success: function (res) {
+
+                    if (!res || !res.success) return;
+
+                    fillCard(res);
+
+                    // 👇 مهم جدًا: احترم حالة العرض الحالية
+                    if (isVisible) {
+                        card.show();
+                    } else {
+                        card.hide();
+                    }
+                }
+            });
+
+        });
+
+        // =========================
+        // FILL CARD
+        // =========================
+        function fillCard(res) {
+
+            $('#empName').text(res.employeeName ?? '');
+            $('#empCode').text("الكود: " + (res.employeeCode ?? ''));
+
+            $('#annualBalance').text(res.annualBalance ?? 0);
+            $('#annualUsed').text(res.annualUsed ?? 0);
+            $('#annualRemain').text((res.annualBalance ?? 0) - (res.annualUsed ?? 0));
+
+            $('#casualBalance').text(res.casualBalance ?? 0);
+            $('#casualUsed').text(res.casualUsed ?? 0);
+            $('#casualRemain').text((res.casualBalance ?? 0) - (res.casualUsed ?? 0));
+
+            $('#sickBalance').text(res.sickBalance ?? 0);
+            $('#sickUsed').text(res.sickUsed ?? 0);
+            $('#sickRemain').text((res.sickBalance ?? 0) - (res.sickUsed ?? 0));
+
+            $('#examBalance').text(res.examBalance ?? 0);
+            $('#examUsed').text(res.examUsed ?? 0);
+            $('#examRemain').text((res.examBalance ?? 0) - (res.examUsed ?? 0));
+        }
+
+        // =========================
+        // RESET
+        // =========================
+        function resetCard() {
+
+            $('#empName,#empCode').text('');
+
+            $('#annualBalance,#annualUsed,#annualRemain').text('');
+            $('#casualBalance,#casualUsed,#casualRemain').text('');
+            $('#sickBalance,#sickUsed,#sickRemain').text('');
+            $('#examBalance,#examUsed,#examRemain').text('');
+        }
+
+    });
 </script>

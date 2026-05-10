@@ -183,7 +183,7 @@
                         <div class="col-md-4">
 
                             <label class="form-label fw-bold">
-                                الأيام المرضي المستخدمة
+                                الأيام المرضي 
                             </label>
 
                             <input type="number"
@@ -193,14 +193,11 @@
                                    value="@Model.SickLeaveUsedDays" />
 
                             <small class="text-muted">
-                                الحد الأقصى 270 يوم (9 شهور)
+                                الحد الأقصى 365 يوم (12 شهر)
                             </small>
 
                         </div>
-                        <input type="date"
-                               name="InsuranceStartDate"
-                               class="form-control"
-                               value="@(Model.InsuranceStartDate?.ToString("yyyy-MM-dd"))" />
+                      
                         <div class="col-md-4">
                             <label>آخر تحديث للرصيد الثانوي</label>
                             <input type="date" value="@(Model.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd"))" name="LastLeaveBalanceUpdate" class="form-control" />
