@@ -18,5 +18,13 @@ namespace HR_App.ViewModel
         public int CurrentStep { get; set; }
         public bool IsMultipleDays { get; set; }
         public string? SelectedDays { get; set; }
+        public TimeSpan? FromTime { get; set; }
+        public TimeSpan? ToTime { get; set; }
+
+        public string Location { get; set; }
+        public string Purpose { get; set; }
+        public string Result { get; set; }
+
+        public IFormFile File { get; set; } // للرفع
     }
 }

@@ -27,7 +27,7 @@
         <!-- Body -->
         <div class="card-body p-4">
 
-            <form method="post" id="requestForm">
+            <form method="post" id="requestForm" enctype="multipart/form-data">
 
                 <div class="row g-3">
                     <div class="col-12">
@@ -259,7 +259,52 @@
                         <div id="selectedDaysPreview" class="mt-2 d-flex flex-wrap gap-2"></div>
 
                     </div>
-                    <!-- Notes -->
+                    <!-- Time From -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">من وقت</label>
+                        <input type="time" name="FromTime" class="form-control" />
+                    </div>
+
+                    <!-- Time To -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">إلى وقت</label>
+                        <input type="time" name="ToTime" class="form-control" />
+                    </div>
+
+                    <!-- Location -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">المكان</label>
+                        <input type="text"
+                               name="Location"
+                               class="form-control"
+                               placeholder="مكان الطلب" />
+                    </div>
+
+                    <!-- Purpose -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">الغرض</label>
+                        <input type="text"
+                               name="Purpose"
+                               class="form-control"
+                               placeholder="سبب الطلب" />
+                    </div>
+
+                    <!-- Result -->
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">النتيجة</label>
+                        <textarea name="Result"
+                                  class="form-control"
+                                  rows="3"
+                                  placeholder="نتيجة الطلب (اختياري)"></textarea>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">إرفاق ملف</label>
+                        <input type="file"
+                               name="File"
+                               class="form-control" />
+                    </div> <!-- Notes -->
                     <div class="col-12">
                         <label class="form-label fw-bold">
                             ملاحظات
@@ -347,7 +392,22 @@
 
             let isMultiple = $('#isMultipleDays').is(':checked');
 
-            if (isMultiple) {
+             // Time validation
+    let fromTime = $('input[name="FromTime"]').val();
+    let toTime = $('input[name="ToTime"]').val();
+
+    if (fromTime && toTime && toTime < fromTime) {
+        e.preventDefault();
+
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'وقت النهاية لا يمكن أن يكون قبل البداية'
+        });
+
+        return;
+    }
+    if (isMultiple) {
 
                 let selected = $('#SelectedDays').val();
 

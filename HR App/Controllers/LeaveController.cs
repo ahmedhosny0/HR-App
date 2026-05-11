@@ -1695,12 +1695,18 @@ WHERE EmployeeId = @EmployeeId";
                                 .ToList();
                         }
                         int requestedDays = dates.Count;
+                        (bool IsValid, string Message) balanceCheck = (true, "");
 
-                        var balanceCheck = CheckLeaveBalance(
-                            model.EmployeeId,
-                            model.RequestTypeId,
-                            requestedDays
-                        );
+                        var excludedTypes = new List<int> { 1, 2, 3, 4 };
+
+                        if (excludedTypes.Contains(model.RequestTypeId))
+                        {
+                            balanceCheck = CheckLeaveBalance(
+                                model.EmployeeId,
+                                model.RequestTypeId,
+                                requestedDays
+                            );
+                        }
 
                         if (!balanceCheck.IsValid)
                         {
@@ -1737,17 +1743,47 @@ WHERE EmployeeId = @EmployeeId";
                                 existingDates.Add(Convert.ToDateTime(reader[0]).Date);
                             }
                         }
+                        string filePath = null;
 
+                        if (model.File != null && model.File.Length > 0)
+                        {
+                            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                            if (!Directory.Exists(uploadsFolder))
+                                Directory.CreateDirectory(uploadsFolder);
+
+                            //string fileName = Guid.NewGuid().ToString() + Path.GetExtension(model.File.FileName);
+                            string userName = (ViewBag.UserName ?? "User").ToString();
+
+                            // تنظيف الاسم (مهم)
+                            userName = userName.Replace(" ", "_");
+
+                            // تاريخ بصيغة مناسبة
+                            string datePart = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+
+                            // الامتداد
+                            string extension = Path.GetExtension(model.File.FileName);
+
+                            // الاسم النهائي
+                            string fileName = $"{userName}_{datePart}{extension}";
+                            string fullPath = Path.Combine(uploadsFolder, fileName);
+
+                            using (var stream = new FileStream(fullPath, FileMode.Create))
+                            {
+                                model.File.CopyTo(stream);
+                            }
+
+                            filePath = "/uploads/" + fileName;
+                        }
                         // =========================
                         // 3. Insert Request
                         // =========================
                         string insertRequest = @"
-                    INSERT INTO HR_Requests
-                    (RequestTypeId, EmployeeId, FromDate, ToDate, Notes, Status, CurrentStep, CreatedDate)
-                    VALUES
-                    (@TypeId, @EmpId, @FromDate, @ToDate, @Notes, 0, 1, GETDATE());
+INSERT INTO HR_Requests
+(RequestTypeId, EmployeeId, FromDate, ToDate, FromTime, ToTime, Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate)
+VALUES
+(@TypeId, @EmpId, @FromDate, @ToDate, @FromTime, @ToTime, @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE());
 
-                    SELECT SCOPE_IDENTITY();";
+SELECT SCOPE_IDENTITY();";
 
                         SqlCommand insertCmd = new SqlCommand(insertRequest, con, transaction);
                         insertCmd.Parameters.Add("@TypeId", SqlDbType.Int).Value = model.RequestTypeId;
@@ -1755,7 +1791,23 @@ WHERE EmployeeId = @EmployeeId";
                         insertCmd.Parameters.Add("@FromDate", SqlDbType.Date);
                         insertCmd.Parameters.Add("@ToDate", SqlDbType.Date);
                         insertCmd.Parameters.Add("@Notes", SqlDbType.NVarChar).Value = model.Notes ?? "";
+                        insertCmd.Parameters.Add("@FromTime", SqlDbType.Time).Value =
+    (object?)model.FromTime ?? DBNull.Value;
 
+                        insertCmd.Parameters.Add("@ToTime", SqlDbType.Time).Value =
+                            (object?)model.ToTime ?? DBNull.Value;
+
+                        insertCmd.Parameters.Add("@Location", SqlDbType.NVarChar).Value =
+                            (object?)model.Location ?? DBNull.Value;
+
+                        insertCmd.Parameters.Add("@Purpose", SqlDbType.NVarChar).Value =
+                            (object?)model.Purpose ?? DBNull.Value;
+
+                        insertCmd.Parameters.Add("@Result", SqlDbType.NVarChar).Value =
+                            (object?)model.Result ?? DBNull.Value;
+
+                        insertCmd.Parameters.Add("@FilePath", SqlDbType.NVarChar).Value =
+                            (object?)filePath ?? DBNull.Value;
                         // =========================
                         // 4. Loop insert + approvals
                         // =========================
