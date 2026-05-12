@@ -1,11 +1,15 @@
 ﻿@model HR_App.ViewModel.LeaveRequestVM
+@addTagHelper*, Microsoft.AspNetCore.Mvc.TagHelpers
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @{
     dynamic emp = ViewBag.CurrentEmployee;
 }
-
+@if (ViewBag.Role != "HeadOfficeHR")
+{
+    <input type="hidden" name="EmployeeId" value="@ViewBag.CurrentEmployeeId" />
+}
 <link rel="stylesheet" type="text/css" href="/css/components.css" />
 <link rel="stylesheet" type="text/css" href="/css/report.css" />
 <link rel="stylesheet" type="text/css" href="/css/base.css" />
@@ -170,21 +174,18 @@
                         </label>
 
                         <select name="EmployeeId"
-                                class="form-select select2"
-                                required>
+        class="form-select select2"
+                        @(ViewBag.Role != "HeadOfficeHR" ? "disabled" : "")
+        required>
 
-                            <option value="">
-                                اختر الموظف
-                            </option>
-
+@*     <option value="">اختر الموظف</option>
+ *@
                             @foreach (var e in ViewBag.Employees as List<SelectListItem>)
                             {
-                                <option value="@e.Value">
-                                    @e.Text
-                                </option>
+                                <option value="@e.Value">@e.Text</option>
                             }
 
-                        </select>
+</select>
                     </div>
 
                     <!-- Request Type -->
@@ -212,7 +213,7 @@
                     </div>
 
                     <!-- From Date -->
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="fromDateDiv">
                         <label class="form-label fw-bold">
                             من تاريخ
                         </label>
@@ -223,7 +224,7 @@
                     </div>
 
                     <!-- To Date -->
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="toDateDiv">
                         <label class="form-label fw-bold">
                             إلى تاريخ
                         </label>
@@ -232,7 +233,7 @@
                                name="ToDate"
                                class="form-control" />
                     </div>
-                    <div class="mb-3 form-check form-switch mt-3">
+                    <div class="mb-3 form-check form-switch mt-3" id="multipleDaysDiv">
 
                         <input type="hidden" name="IsMultipleDays" id="IsMultipleDaysHidden" value="false" />
 
@@ -259,7 +260,8 @@
                         <div id="selectedDaysPreview" class="mt-2 d-flex flex-wrap gap-2"></div>
 
                     </div>
-                    <!-- Time From -->
+                    <div id="missionFields" class="row g-3 mt-1" style="display:none;">
+                        <!-- Time From -->
                     <div class="col-md-6">
                         <label class="form-label fw-bold">من وقت</label>
                         <input type="time" name="FromTime" class="form-control" />
@@ -297,15 +299,15 @@
                                   rows="3"
                                   placeholder="نتيجة الطلب (اختياري)"></textarea>
                     </div>
-
+                   </div>
                     <!-- File Upload -->
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold">إرفاق ملف</label>
+                    <div class="col-md-12" id="fileDiv" style="display:none">
+                        <label class="form-label fw-bold">إرفاق ملف جدول الامتحانات </label>
                         <input type="file"
                                name="File"
                                class="form-control" />
                     </div> <!-- Notes -->
-                    <div class="col-12">
+                    <div class="col-12" id="notesDiv">
                         <label class="form-label fw-bold">
                             ملاحظات
                         </label>
@@ -340,9 +342,23 @@
 <script src="/js/lib/sweetalert2@11.js"></script>
 
 <script>
-        $(document).ready(function () {
+    $(document).ready(function () {
 
-        // Flatpickr (Multiple Days)
+        // =========================
+        // INIT SELECT2
+        // =========================
+        $('.select2').select2();
+
+        // =========================
+        // INIT HIDDEN FIELDS
+        // =========================
+        $('#missionFields').hide();
+        $('#fileDiv').hide();
+        $('#multipleDaysSection').hide();
+
+        // =========================
+        // FLATPICKR
+        // =========================
         flatpickr("#SelectedDays", {
             mode: "multiple",
             dateFormat: "Y-m-d",
@@ -352,21 +368,24 @@
 
                 let container = document.getElementById("selectedDaysPreview");
                 container.innerHTML = "";
-
                 selectedDates.forEach(d => {
 
-                    let date = d.toISOString().split('T')[0];
+                    let date = flatpickr.formatDate(d, "Y-m-d");
 
                     let tag = document.createElement("span");
+
                     tag.className = "badge bg-primary p-2";
                     tag.innerText = date;
 
                     container.appendChild(tag);
                 });
+                
             }
         });
 
-        // Toggle
+        // =========================
+        // MULTIPLE DAYS TOGGLE
+        // =========================
         $('#isMultipleDays').on('change', function () {
 
             let isChecked = $(this).is(':checked');
@@ -375,43 +394,127 @@
 
             if (isChecked) {
 
-                $('#multipleDaysSection').show();
+                $('#multipleDaysSection').slideDown(200);
 
-                $('#FromDate, #ToDate').attr('disabled', true);
+                $('input[name="FromDate"]').val('');
+                $('input[name="ToDate"]').val('');
+
+                $('input[name="FromDate"]').prop('disabled', true);
+                $('input[name="ToDate"]').prop('disabled', true);
 
             } else {
 
-                $('#multipleDaysSection').hide();
+                $('#multipleDaysSection').slideUp(200);
 
-                $('#FromDate, #ToDate').attr('disabled', false);
+                $('input[name="FromDate"]').prop('disabled', false);
+                $('input[name="ToDate"]').prop('disabled', false);
+
+                $('#SelectedDays').val('');
+                $('#selectedDaysPreview').html('');
             }
         });
 
-        // Validation on submit
+        // =========================
+        // REQUEST TYPE CHANGE
+        // =========================
+        const SIMPLE_TYPES = ['1', '2', '3']; // اعتيادي - عارضة - مرضي
+
+        $('select[name="RequestTypeId"]').on('change', function () {
+
+            let typeId = $(this).val();
+
+            // RESET
+            $('#missionFields').hide();
+            $('#fileDiv').hide();
+
+            // =========================
+            // SIMPLE LEAVES
+            // =========================
+            if (SIMPLE_TYPES.includes(typeId)) {
+
+                $('#missionFields').hide();
+                $('#fileDiv').hide();
+
+                $('#fromDateDiv').show();
+                $('#toDateDiv').show();
+                $('#multipleDaysDiv').show();
+                $('#notesDiv').show();
+            }
+
+            // =========================
+            // EXAM
+            // =========================
+            else if (typeId == '4') {
+
+                $('#missionFields').hide();
+
+                $('#fileDiv').show();
+
+                $('#fromDateDiv').show();
+                $('#toDateDiv').show();
+                $('#multipleDaysDiv').show();
+                $('#notesDiv').show();
+            }
+
+            // =========================
+            // MISSIONS
+            // =========================
+            else if (typeId == '5' || typeId == '6') {
+
+                $('#missionFields').show();
+
+                $('#fileDiv').hide();
+
+                $('#fromDateDiv').show();
+                $('#toDateDiv').show();
+                $('#multipleDaysDiv').show();
+                $('#notesDiv').show();
+            }
+
+            // =========================
+            // OTHER TYPES
+            // =========================
+            else {
+
+                $('#missionFields').hide();
+                $('#fileDiv').hide();
+
+                $('#fromDateDiv').show();
+                $('#toDateDiv').show();
+                $('#multipleDaysDiv').show();
+                $('#notesDiv').show();
+            }
+        });
+
+        // =========================
+        // FORM VALIDATION
+        // =========================
         $('#requestForm').on('submit', function (e) {
+
+            let typeId = $('select[name="RequestTypeId"]').val();
 
             let isMultiple = $('#isMultipleDays').is(':checked');
 
-             // Time validation
-    let fromTime = $('input[name="FromTime"]').val();
-    let toTime = $('input[name="ToTime"]').val();
+            let fromDate = $('input[name="FromDate"]').val();
+            let toDate = $('input[name="ToDate"]').val();
 
-    if (fromTime && toTime && toTime < fromTime) {
-        e.preventDefault();
+            let selectedDays = $('#SelectedDays').val();
 
-        Swal.fire({
-            icon: 'error',
-            title: 'خطأ',
-            text: 'وقت النهاية لا يمكن أن يكون قبل البداية'
-        });
+            let fromTime = $('input[name="FromTime"]').val();
+            let toTime = $('input[name="ToTime"]').val();
 
-        return;
-    }
-    if (isMultiple) {
+            let location = $('input[name="Location"]').val();
+            let purpose = $('input[name="Purpose"]').val();
 
-                let selected = $('#SelectedDays').val();
+            // =========================
+            // DATE VALIDATION
+            // لازم يا اما تواريخ
+            // يا اما ايام متفرقة
+            // =========================
 
-                if (!selected || selected.length === 0) {
+            if (isMultiple) {
+
+                if (!selectedDays || selectedDays.length === 0) {
 
                     e.preventDefault();
 
@@ -423,13 +526,39 @@
 
                     return;
                 }
+
+                // ممنوع إدخال تواريخ مع الأيام المتفرقة
+                if (fromDate || toDate) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'لا يمكن استخدام التواريخ مع الأيام المتفرقة'
+                    });
+
+                    return;
+                }
             }
             else {
 
-                let fromDate = $('#FromDate').val();
-                let toDate = $('#ToDate').val();
+                // لازم التاريخين
+                if (!fromDate || !toDate) {
 
-                if (toDate && fromDate && toDate < fromDate) {
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يجب إدخال من تاريخ وإلى تاريخ'
+                    });
+
+                    return;
+                }
+
+                // تاريخ النهاية
+                if (toDate < fromDate) {
 
                     e.preventDefault();
 
@@ -442,36 +571,91 @@
                     return;
                 }
             }
-        });
 
-    });
-    $(document).ready(function () {
+            // =========================
+            // MISSION VALIDATION
+            // =========================
+            if (typeId == '5' || typeId == '6') {
 
-        $('.select2').select2();
-
-        $('#requestForm').on('submit', function (e) {
-
-            let fromDate = $('input[name="FromDate"]').val();
-            let toDate = $('input[name="ToDate"]').val();
-
-            if (fromDate && toDate) {
-
-                if (toDate < fromDate) {
+                if (!fromTime || !toTime) {
 
                     e.preventDefault();
 
                     Swal.fire({
                         icon: 'error',
                         title: 'خطأ',
-                        text: 'تاريخ النهاية لا يمكن أن يكون قبل البداية'
+                        text: 'يجب إدخال وقت البداية والنهاية'
                     });
 
-                    return false;
+                    return;
+                }
+
+                if (toTime < fromTime) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'وقت النهاية لا يمكن أن يكون قبل البداية'
+                    });
+
+                    return;
+                }
+
+                if (!location) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يجب إدخال المكان'
+                    });
+
+                    return;
+                }
+
+                if (!purpose) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يجب إدخال الغرض'
+                    });
+
+                    return;
                 }
             }
+
+            // =========================
+            // EXAM FILE REQUIRED
+            // =========================
+            if (typeId == '4') {
+
+                let file = $('input[name="File"]').val();
+
+                if (!file) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يجب إرفاق ملف'
+                    });
+
+                    return;
+                }
+            }
+
         });
 
-        // Success Message
+        // =========================
+        // SUCCESS MESSAGE
+        // =========================
         var success = '@Html.Raw(TempData["SuccessMessage"])';
 
         if (success) {
@@ -482,10 +666,11 @@
                 html: success,
                 confirmButtonText: 'حسناً'
             });
-
         }
 
-        // Error Message
+        // =========================
+        // ERROR MESSAGE
+        // =========================
         var error = '@Html.Raw(TempData["ErrorMessage"])';
 
         if (error) {
@@ -496,64 +681,70 @@
                 html: error,
                 confirmButtonText: 'إغلاق'
             });
-
         }
 
-    });
-
-</script>
-<script>
-    $(document).ready(function () {
-
+        // =========================
+        // LEAVE BALANCE
+        // =========================
         var emp = @Html.Raw(Json.Serialize(ViewBag.CurrentEmployee));
 
         let card = $('#leaveBalanceCard');
+
         let btn = $('#toggleBalanceBtn');
 
-        let isVisible = false; // 👈 حالة العرض
+        let isVisible = false;
 
-        // =========================
-        // INIT CURRENT USER (BUT HIDDEN)
-        // =========================
         if (emp) {
             fillCard(emp);
         }
 
         card.hide();
 
-        // =========================
-        // TOGGLE BUTTON
-        // =========================
         $('#toggleBalanceBtn').on('click', function () {
 
             isVisible = !isVisible;
 
             if (isVisible) {
+
                 card.slideDown(200);
-                btn.html(`<i class="bi bi-eye-slash-fill me-2"></i> إخفاء رصيد الاجازات`);
+
+                btn.html(`
+                        <i class="bi bi-eye-slash-fill me-2"></i>
+                        إخفاء رصيد الاجازات
+                    `);
+
             } else {
+
                 card.slideUp(200);
-                btn.html(`<i class="bi bi-eye-fill me-2"></i> عرض رصيد الاجازات`);
+
+                btn.html(`
+                        <i class="bi bi-eye-fill me-2"></i>
+                        عرض رصيد الاجازات
+                    `);
             }
         });
 
-        // =========================
-        // EMPLOYEE CHANGE (IMPORTANT FIX)
-        // =========================
         $('select[name="EmployeeId"]').on('change', function () {
 
             let employeeId = $(this).val();
 
             if (!employeeId) {
+
                 card.hide();
+
                 isVisible = false;
+
                 resetCard();
+
                 return;
             }
 
             $.ajax({
+
                 url: '/Leave/GetEmployeeLeaveBalance',
+
                 type: 'GET',
+
                 data: { employeeId: employeeId },
 
                 success: function (res) {
@@ -562,7 +753,6 @@
 
                     fillCard(res);
 
-                    // 👇 مهم جدًا: احترم حالة العرض الحالية
                     if (isVisible) {
                         card.show();
                     } else {
@@ -570,15 +760,12 @@
                     }
                 }
             });
-
         });
 
-        // =========================
-        // FILL CARD
-        // =========================
         function fillCard(res) {
 
             $('#empName').text(res.employeeName ?? '');
+
             $('#empCode').text("الكود: " + (res.employeeCode ?? ''));
 
             $('#annualBalance').text(res.annualBalance ?? 0);
@@ -598,16 +785,16 @@
             $('#examRemain').text((res.examBalance ?? 0) - (res.examUsed ?? 0));
         }
 
-        // =========================
-        // RESET
-        // =========================
         function resetCard() {
 
             $('#empName,#empCode').text('');
 
             $('#annualBalance,#annualUsed,#annualRemain').text('');
+
             $('#casualBalance,#casualUsed,#casualRemain').text('');
+
             $('#sickBalance,#sickUsed,#sickRemain').text('');
+
             $('#examBalance,#examUsed,#examRemain').text('');
         }
 

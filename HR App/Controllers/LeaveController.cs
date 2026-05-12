@@ -1587,9 +1587,30 @@ WHERE EmployeeId = @EmployeeId";
                 // =========================
                 // Employees
                 // =========================
-                string q1 = "SELECT EmployeeId, EmployeeName FROM HR_Employees WHERE IsActive = 1";
+                var role = ViewBag.Role;
+
+                string q1 = "";
+
+                if (role == "HeadOfficeHR")
+                {
+                    // HR يشوف كل الموظفين
+                    q1 = "SELECT EmployeeId, EmployeeName FROM HR_Employees WHERE IsActive = 1";
+                }
+                else
+                {
+                    // أي حد غير HR يشوف نفسه بس
+                    q1 = @"SELECT EmployeeId, EmployeeName 
+           FROM HR_Employees 
+           WHERE EmployeeCode = @userId AND IsActive = 1";
+                }
 
                 SqlCommand cmd1 = new SqlCommand(q1, con);
+
+                if (role != "HeadOfficeHR")
+                {
+                    cmd1.Parameters.AddWithValue("@userId", userId);
+                }
+
                 using (SqlDataReader dr1 = cmd1.ExecuteReader())
                 {
                     while (dr1.Read())
@@ -1601,7 +1622,6 @@ WHERE EmployeeId = @EmployeeId";
                         });
                     }
                 }
-
                 // =========================
                 // Request Types
                 // =========================
@@ -1626,6 +1646,50 @@ WHERE EmployeeId = @EmployeeId";
 
             return View(vm);
         }
+        private HashSet<DateTime> GetExistingRequestDates(
+    SqlConnection con,
+    SqlTransaction transaction,
+    int employeeId,
+    int requestTypeId,
+    List<DateTime> dates)
+        {
+            HashSet<DateTime> existingDates = new HashSet<DateTime>();
+
+            if (dates == null || !dates.Any())
+                return existingDates;
+
+            var paramNames = dates
+                .Select((d, i) => "@d" + i)
+                .ToList();
+
+            string query = $@"
+        SELECT CAST(FromDate AS DATE)
+        FROM HR_Requests
+        WHERE EmployeeId = @EmpId
+       -- AND RequestTypeId = @TypeId
+        AND CAST(FromDate AS DATE) IN ({string.Join(",", paramNames)})";
+
+            using (SqlCommand cmd = new SqlCommand(query, con, transaction))
+            {
+                cmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = employeeId;
+                cmd.Parameters.Add("@TypeId", SqlDbType.Int).Value = requestTypeId;
+
+                for (int i = 0; i < dates.Count; i++)
+                {
+                    cmd.Parameters.Add(paramNames[i], SqlDbType.Date).Value = dates[i];
+                }
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        existingDates.Add(Convert.ToDateTime(reader[0]).Date);
+                    }
+                }
+            }
+
+            return existingDates;
+        }
         [HttpPost]
         public IActionResult CreateRequest(LeaveRequestVM model)
         {
@@ -1646,11 +1710,13 @@ WHERE EmployeeId = @EmployeeId";
                             TempData["ErrorMessage"] = datescheck.Message;
                             return RedirectToAction("CreateRequest");
                         }
+
                         if (datescheck.HireDate == null)
                         {
                             TempData["ErrorMessage"] = "لا يمكن إنشاء إجازة قبل تحديد تاريخ التعيين";
                             return RedirectToAction("CreateRequest");
                         }
+
                         if (datescheck.InsuranceDate == null)
                         {
                             TempData["ErrorMessage"] = "لا يمكن إنشاء إجازة قبل تحديد تاريخ التأمين";
@@ -1659,14 +1725,10 @@ WHERE EmployeeId = @EmployeeId";
 
                         int usedDays = GetUsedLeaveDays(model.EmployeeId);
 
-  
-                        List<string> insertedDays = new List<string>();
-                        List<string> duplicateDays = new List<string>();
-
                         List<DateTime> dates = new List<DateTime>();
 
                         // =========================
-                        // 1. تحديد الأيام
+                        // Build Dates
                         // =========================
                         if (model.IsMultipleDays && !string.IsNullOrEmpty(model.SelectedDays))
                         {
@@ -1694,76 +1756,56 @@ WHERE EmployeeId = @EmployeeId";
                                 .Select(d => model.FromDate.Value.AddDays(d))
                                 .ToList();
                         }
-                        int requestedDays = dates.Count;
-                        (bool IsValid, string Message) balanceCheck = (true, "");
 
+                        int requestedDays = dates.Count;
+
+                        // =========================
+                        // Balance Check
+                        // =========================
                         var excludedTypes = new List<int> { 1, 2, 3, 4 };
 
                         if (excludedTypes.Contains(model.RequestTypeId))
                         {
-                            balanceCheck = CheckLeaveBalance(
+                            var balanceCheck = CheckLeaveBalance(
                                 model.EmployeeId,
                                 model.RequestTypeId,
                                 requestedDays
                             );
-                        }
 
-                        if (!balanceCheck.IsValid)
-                        {
-                            TempData["ErrorMessage"] = balanceCheck.Message;
-                            return RedirectToAction("CreateRequest");
-                        }
-                        // =========================
-                        // 2. Check duplicates
-                        // =========================
-                        var paramNames = dates.Select((d, i) => "@d" + i).ToList();
-
-                        string checkQuery = $@"
-                    SELECT CAST(FromDate AS DATE)
-                    FROM HR_Requests
-                    WHERE EmployeeId = @EmpId
-                    AND RequestTypeId = @TypeId
-                    AND CAST(FromDate AS DATE) IN ({string.Join(",", paramNames)})";
-
-                        SqlCommand checkCmd = new SqlCommand(checkQuery, con, transaction);
-                        checkCmd.Parameters.AddWithValue("@EmpId", model.EmployeeId);
-                        checkCmd.Parameters.AddWithValue("@TypeId", model.RequestTypeId);
-
-                        for (int i = 0; i < dates.Count; i++)
-                        {
-                            checkCmd.Parameters.AddWithValue(paramNames[i], dates[i]);
-                        }
-
-                        HashSet<DateTime> existingDates = new HashSet<DateTime>();
-
-                        using (var reader = checkCmd.ExecuteReader())
-                        {
-                            while (reader.Read())
+                            if (!balanceCheck.IsValid)
                             {
-                                existingDates.Add(Convert.ToDateTime(reader[0]).Date);
+                                TempData["ErrorMessage"] = balanceCheck.Message;
+                                return RedirectToAction("CreateRequest");
                             }
                         }
+
+                        // =========================
+                        // Existing Dates
+                        // =========================
+                        var existingDates = GetExistingRequestDates(
+                            con,
+                            transaction,
+                            model.EmployeeId,
+                            model.RequestTypeId,
+                            dates
+                        );
+
+                        // =========================
+                        // File Upload
+                        // =========================
                         string filePath = null;
 
                         if (model.File != null && model.File.Length > 0)
                         {
                             string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+
                             if (!Directory.Exists(uploadsFolder))
                                 Directory.CreateDirectory(uploadsFolder);
 
-                            //string fileName = Guid.NewGuid().ToString() + Path.GetExtension(model.File.FileName);
-                            string userName = (ViewBag.UserName ?? "User").ToString();
-
-                            // تنظيف الاسم (مهم)
-                            userName = userName.Replace(" ", "_");
-
-                            // تاريخ بصيغة مناسبة
+                            string userName = (ViewBag.UserName ?? "User").ToString().Replace(" ", "_");
                             string datePart = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-
-                            // الامتداد
                             string extension = Path.GetExtension(model.File.FileName);
 
-                            // الاسم النهائي
                             string fileName = $"{userName}_{datePart}{extension}";
                             string fullPath = Path.Combine(uploadsFolder, fileName);
 
@@ -1774,103 +1816,114 @@ WHERE EmployeeId = @EmployeeId";
 
                             filePath = "/uploads/" + fileName;
                         }
+
                         // =========================
-                        // 3. Insert Request
+                        // FIXED INSERT (IMPORTANT)
                         // =========================
-                        string insertRequest = @"
+                        string insertSql = @"
 INSERT INTO HR_Requests
-(RequestTypeId, EmployeeId, FromDate, ToDate, FromTime, ToTime, Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate)
+(RequestTypeId, EmployeeId, FromDate, ToDate, FromTime, ToTime,
+ Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate)
+OUTPUT INSERTED.RequestId
 VALUES
-(@TypeId, @EmpId, @FromDate, @ToDate, @FromTime, @ToTime, @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE());
+(@TypeId, @EmpId, @FromDate, @ToDate, @FromTime, @ToTime,
+ @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE());";
 
-SELECT SCOPE_IDENTITY();";
+                        List<string> insertedDays = new List<string>();
+                        List<string> skippedDays = new List<string>();
 
-                        SqlCommand insertCmd = new SqlCommand(insertRequest, con, transaction);
-                        insertCmd.Parameters.Add("@TypeId", SqlDbType.Int).Value = model.RequestTypeId;
-                        insertCmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = model.EmployeeId;
-                        insertCmd.Parameters.Add("@FromDate", SqlDbType.Date);
-                        insertCmd.Parameters.Add("@ToDate", SqlDbType.Date);
-                        insertCmd.Parameters.Add("@Notes", SqlDbType.NVarChar).Value = model.Notes ?? "";
-                        insertCmd.Parameters.Add("@FromTime", SqlDbType.Time).Value =
-    (object?)model.FromTime ?? DBNull.Value;
-
-                        insertCmd.Parameters.Add("@ToTime", SqlDbType.Time).Value =
-                            (object?)model.ToTime ?? DBNull.Value;
-
-                        insertCmd.Parameters.Add("@Location", SqlDbType.NVarChar).Value =
-                            (object?)model.Location ?? DBNull.Value;
-
-                        insertCmd.Parameters.Add("@Purpose", SqlDbType.NVarChar).Value =
-                            (object?)model.Purpose ?? DBNull.Value;
-
-                        insertCmd.Parameters.Add("@Result", SqlDbType.NVarChar).Value =
-                            (object?)model.Result ?? DBNull.Value;
-
-                        insertCmd.Parameters.Add("@FilePath", SqlDbType.NVarChar).Value =
-                            (object?)filePath ?? DBNull.Value;
-                        // =========================
-                        // 4. Loop insert + approvals
-                        // =========================
                         foreach (var date in dates)
                         {
-                            if (existingDates.Contains(date))
+                            if (existingDates.Contains(date.Date))
                             {
-                                duplicateDays.Add(date.ToString("yyyy-MM-dd"));
+                                skippedDays.Add(date.ToString("yyyy-MM-dd"));
                                 continue;
                             }
+
                             var check = policy.Validate(
-      model.RequestTypeId,
-      date,
-      date,
-      datescheck.HireDate.Value,
-      datescheck.InsuranceDate ?? datescheck.HireDate.Value, // fallback
-      usedDays
-  );
+                                model.RequestTypeId,
+                                date,
+                                date,
+                                datescheck.HireDate.Value,
+                                datescheck.InsuranceDate ?? datescheck.HireDate.Value,
+                                usedDays
+                            );
 
                             if (!check.IsValid)
                             {
                                 TempData["ErrorMessage"] = check.Message;
                                 return RedirectToAction("CreateRequest");
                             }
-                          
-                            insertCmd.Parameters["@FromDate"].Value = date;
-                            insertCmd.Parameters["@ToDate"].Value = date;
+
+                            SqlCommand insertCmd = new SqlCommand(insertSql, con, transaction);
+
+                            insertCmd.Parameters.Add("@TypeId", SqlDbType.Int).Value = model.RequestTypeId;
+                            insertCmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = model.EmployeeId;
+                            insertCmd.Parameters.Add("@FromDate", SqlDbType.Date).Value = date;
+                            insertCmd.Parameters.Add("@ToDate", SqlDbType.Date).Value = date;
+
+                            insertCmd.Parameters.Add("@FromTime", SqlDbType.Time).Value =
+                                (object?)model.FromTime ?? DBNull.Value;
+
+                            insertCmd.Parameters.Add("@ToTime", SqlDbType.Time).Value =
+                                (object?)model.ToTime ?? DBNull.Value;
+
+                            insertCmd.Parameters.Add("@Location", SqlDbType.NVarChar).Value =
+                                (object?)model.Location ?? DBNull.Value;
+
+                            insertCmd.Parameters.Add("@Purpose", SqlDbType.NVarChar).Value =
+                                (object?)model.Purpose ?? DBNull.Value;
+
+                            insertCmd.Parameters.Add("@Result", SqlDbType.NVarChar).Value =
+                                (object?)model.Result ?? DBNull.Value;
+
+                            insertCmd.Parameters.Add("@FilePath", SqlDbType.NVarChar).Value =
+                                (object?)filePath ?? DBNull.Value;
+
+                            insertCmd.Parameters.Add("@Notes", SqlDbType.NVarChar).Value =
+                                model.Notes ?? "";
 
                             int requestId = Convert.ToInt32(insertCmd.ExecuteScalar());
 
+                            if (requestId <= 0)
+                            {
+                                skippedDays.Add(date.ToString("yyyy-MM-dd"));
+                                continue;
+                            }
+
                             // =========================
-                            // 5. INSERT APPROVAL FLOW
+                            // APPROVAL
                             // =========================
                             string approvalSql = @"
-                        WITH RequestPath AS (
-                            SELECT h.ChildRoleId, h.ParentRoleId, 1 AS StepLevel
-                            FROM HR_Employees e
-                            INNER JOIN HR_EmployeeHierarchy h 
-                                ON e.RoleId = h.ChildRoleId
-                            WHERE e.EmployeeId = @EmpId
+WITH RequestPath AS (
+    SELECT h.ChildRoleId, h.ParentRoleId, 1 AS StepLevel
+    FROM HR_Employees e
+    INNER JOIN HR_EmployeeHierarchy h 
+        ON e.RoleId = h.ChildRoleId
+    WHERE e.EmployeeId = @EmpId
 
-                            UNION ALL
+    UNION ALL
 
-                            SELECT h.ChildRoleId, h.ParentRoleId, rp.StepLevel + 1
-                            FROM HR_EmployeeHierarchy h
-                            INNER JOIN RequestPath rp 
-                                ON h.ChildRoleId = rp.ParentRoleId
-                        )
-                        INSERT INTO HR_RequestApprovals
-                        (RequestId, StepOrder, ApproverId, Status)
-                        SELECT 
-                            @RequestId,
-                            rp.StepLevel,
-                            e.EmployeeId,
-                            CASE WHEN rp.StepLevel = 1 THEN 1 ELSE 0 END
-                        FROM RequestPath rp
-                        INNER JOIN HR_Employees e 
-                            ON rp.ParentRoleId = e.RoleId
-                        WHERE e.IsActive = 1;";
+    SELECT h.ChildRoleId, h.ParentRoleId, rp.StepLevel + 1
+    FROM HR_EmployeeHierarchy h
+    INNER JOIN RequestPath rp 
+        ON h.ChildRoleId = rp.ParentRoleId
+)
+INSERT INTO HR_RequestApprovals
+(RequestId, StepOrder, ApproverId, Status)
+SELECT 
+    @RequestId,
+    rp.StepLevel,
+    e.EmployeeId,
+    CASE WHEN rp.StepLevel = 1 THEN 1 ELSE 0 END
+FROM RequestPath rp
+INNER JOIN HR_Employees e 
+    ON rp.ParentRoleId = e.RoleId
+WHERE e.IsActive = 1;";
 
                             SqlCommand approvalCmd = new SqlCommand(approvalSql, con, transaction);
-                            approvalCmd.Parameters.AddWithValue("@RequestId", requestId);
-                            approvalCmd.Parameters.AddWithValue("@EmpId", model.EmployeeId);
+                            approvalCmd.Parameters.Add("@RequestId", SqlDbType.Int).Value = requestId;
+                            approvalCmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = model.EmployeeId;
 
                             approvalCmd.ExecuteNonQuery();
 
@@ -1878,15 +1931,15 @@ SELECT SCOPE_IDENTITY();";
                         }
 
                         // =========================
-                        // 6. Result
+                        // RESULT
                         // =========================
-                        if (insertedDays.Count == 0)
+                        if (!insertedDays.Any())
                         {
                             transaction.Rollback();
 
                             TempData["ErrorMessage"] =
                                 "❌ لم يتم حفظ أي طلب لأن الأيام مكررة:<br>" +
-                                string.Join("<br>", duplicateDays);
+                                string.Join("<br>", skippedDays);
 
                             return RedirectToAction("CreateRequest");
                         }
@@ -1894,14 +1947,14 @@ SELECT SCOPE_IDENTITY();";
                         transaction.Commit();
 
                         TempData["SuccessMessage"] =
-                            $"تم حفظ {insertedDays.Count} طلب بنجاح<br>" +
-                            (duplicateDays.Any()
-                                ? "⚠️ تم تجاهل: " + string.Join(" , ", duplicateDays)
+                            $"✅ تم حفظ {insertedDays.Count} طلب بنجاح<br>" +
+                            (skippedDays.Any()
+                                ? "⚠️ الأيام المكررة:<br>" + string.Join("<br>", skippedDays)
                                 : "");
 
                         return RedirectToAction("CreateRequest");
                     }
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         transaction.Rollback();
                         TempData["ErrorMessage"] = "حدث خطأ أثناء الحفظ ❌";
@@ -2006,6 +2059,92 @@ SELECT SCOPE_IDENTITY();";
                     }
                 }
             }
+        }
+        public IActionResult MyRequests()
+        {
+            var userCode = ViewBag.UserName;
+
+            List<RequestDetailsVM> list = new List<RequestDetailsVM>();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                string sql = @"
+        SELECT  
+    Em.EmployeeName AS Employee,
+    Mang.EmployeeName AS Manager,
+    Ro.RoleName,
+    Em.EmployeeId,
+    Re.RequestTypeId,
+    App.ApproverId,
+    Re.RequestId,
+    App.Status,
+
+    rt.Name AS RequestType,
+    Re.FromDate,
+    Re.ToDate,
+    Re.CreatedDate,
+
+    CASE 
+        WHEN EXISTS (
+            SELECT 1 
+            FROM HR_RequestApprovals a 
+            WHERE a.RequestId = Re.RequestId 
+              AND a.Status = 3
+        ) THEN N'مرفوض'
+        
+        WHEN NOT EXISTS (
+            SELECT 1 
+            FROM HR_RequestApprovals a 
+            WHERE a.RequestId = Re.RequestId 
+              AND a.Status = 2
+        ) THEN N'مقبول'
+        
+        ELSE N'قيد الانتظار'
+    END AS StatusName
+
+FROM HR_RequestApprovals App
+
+INNER JOIN HR_Requests Re 
+    ON App.RequestId = Re.RequestId
+
+INNER JOIN HR_Employees Em 
+    ON Re.EmployeeId = Em.EmployeeId
+
+INNER JOIN HR_Employees Mang 
+    ON App.ApproverId = Mang.EmployeeId
+
+INNER JOIN HR_Roles Ro 
+    ON Ro.RoleId = Em.RoleId
+
+INNER JOIN HR_RequestTypes rt 
+    ON Re.RequestTypeId = rt.RequestTypeId 
+WHERE Em.EmployeeCode = @code
+
+";
+
+                SqlCommand cmd = new SqlCommand(sql, con);
+                cmd.Parameters.AddWithValue("@code", userCode);
+
+                con.Open();
+                var dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    list.Add(new RequestDetailsVM
+                    {
+                        Employee = dr["Employee"].ToString(),
+                        RequestType = dr["RequestType"].ToString(),
+                        Manager = dr["Manager"].ToString(),
+                        RoleName = dr["RoleName"].ToString(),
+                        FromDate = (DateTime)dr["FromDate"],
+                        ToDate = (DateTime)dr["ToDate"],
+                        CreatedDate = (DateTime)dr["CreatedDate"],
+                        StatusName = dr["StatusName"].ToString()
+                    });
+                }
+            }
+
+            return View(list);
         }
 
     }
