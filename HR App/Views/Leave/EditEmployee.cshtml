@@ -147,7 +147,23 @@
                                    value="@(Model.InsuranceStartDate?.ToString("yyyy-MM-dd"))" />
 
                         </div>
+                        <div class="col-md-6 mb-3">
 
+                            <label class="form-label fw-bold">
+                                نظام الإجازات الأسبوعية
+                            </label>
+
+                            <select asp-for="WeeklyOffGroupId"
+                                    class="form-select"
+                                    asp-items="ViewBag.WeeklyOffGroups">
+
+                                <option value="">
+                                    -- اختر نظام الإجازات --
+                                </option>
+
+                            </select>
+
+                        </div>
                         <!-- ANNUAL BALANCE -->
                         <div class="col-md-4">
 
@@ -198,10 +214,10 @@
 
                         </div>
                       
-                        <div class="col-md-4">
+                       @*  <div class="col-md-4">
                             <label>آخر تحديث للرصيد الثانوي</label>
                             <input type="date" value="@(Model.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd"))" name="LastLeaveBalanceUpdate" class="form-control" />
-                        </div>
+                        </div> *@
 
                         <!-- ACTIVE -->
                         <div class="col-md-12 mt-3">

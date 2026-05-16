@@ -4,30 +4,116 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid mt-4" >
+<div class="container-fluid mt-4">
 
-    <!-- PAGE HEADER -->
-    <div class="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-       
+    <!-- ================= HEADER ================= -->
+    <div class="page-header mb-4">
 
-        <div>
-            <p class="badge bg-primary fs-6 px-2 py-2">
-                مراجعة واعتماد أو رفض الطلبات المرسلة
-            </p>
-        </div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
 
-        <div>
+            <div>
 
-            <span class="badge bg-primary fs-6 px-3 py-2">
-                إجمالي الطلبات :
-                @(Model?.Count ?? 0)
-            </span>
+                <h4 class="fw-bold mb-1">
+                    إدارة الطلبات
+                </h4>
+
+                <p class="text-muted mb-0">
+                    مراجعة واعتماد أو رفض الطلبات
+                </p>
+
+            </div>
+
+            <div>
+
+                <span class="badge bg-primary fs-6 px-4 py-3 shadow-sm">
+                    @(Model?.Count ?? 0) طلب
+                </span>
+
+            </div>
 
         </div>
 
     </div>
 
-    <!-- TABLE -->
+    <!-- ================= FILTER TABS ================= -->
+    <div class="filters-wrapper mb-4">
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <button class="btn btn-primary filter-btn active" data-type="all">
+                الكل
+            </button>
+
+            <button class="btn btn-outline-primary filter-btn" data-type="1">
+                اعتيادي
+            </button>
+
+            <button class="btn btn-outline-warning filter-btn" data-type="2">
+                عارضة
+            </button>
+
+            <button class="btn btn-outline-danger filter-btn" data-type="3">
+                مرضي
+            </button>
+
+            <button class="btn btn-outline-success filter-btn" data-type="4">
+                امتحانات
+            </button>
+
+            <button class="btn btn-outline-info filter-btn" data-type="5">
+                مأمورية يوم كامل
+            </button>
+
+            <button class="btn btn-outline-warning filter-btn" data-type="6">
+                مأمورية التشغيل بنسبة
+            </button>
+
+            <button class="btn btn-outline-secondary filter-btn" data-type="7">
+                بدل راحة
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- ================= BULK ACTIONS ================= -->
+    <div class="bulk-actions mb-4">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+            <div class="d-flex flex-wrap gap-2">
+
+                <button id="approveSelected"
+                        class="btn btn-success action-main-btn">
+
+                    <i class="fas fa-check ms-1"></i>
+                    موافقة المحدد
+
+                </button>
+
+                <button id="rejectSelected"
+                        class="btn btn-danger action-main-btn">
+
+                    <i class="fas fa-times ms-1"></i>
+                    رفض المحدد
+
+                </button>
+
+            </div>
+
+            <button id="approveAll"
+                    class="btn btn-outline-primary action-main-btn">
+
+                <i class="fas fa-check-double ms-1"></i>
+                موافقة الكل
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- ================= TABLE ================= -->
     <div class="report-container">
 
         <div class="table-responsive">
@@ -38,15 +124,29 @@
 
                     <tr>
 
-                        <th>الإجراءات</th>
+                        <th>
+                            <input type="checkbox" id="selectAll" />
+                        </th>
 
-                        <th>الموظف</th>
+                        <th>
+                            الإجراءات
+                        </th>
 
-                        <th>نوع الطلب</th>
+                        <th>
+                            الموظف
+                        </th>
 
-                        <th>من تاريخ</th>
+                        <th>
+                            نوع الطلب
+                        </th>
 
-                        <th>إلى تاريخ</th>
+                        <th>
+                            من تاريخ
+                        </th>
+
+                        <th>
+                            إلى تاريخ
+                        </th>
 
                     </tr>
 
@@ -56,18 +156,46 @@
 
                     @if (Model != null && Model.Count > 0)
                     {
-                        @foreach (var item in Model)
+                        foreach (var item in Model)
                         {
-                            <tr>
+                            var badgeClass = item.RequestTypeId switch
+                            {
+                                1 => "bg-primary",
+
+                                2 => "bg-warning text-dark",
+
+                                3 => "bg-danger",
+
+                                4 => "bg-success",
+
+                                5 => "bg-info text-dark",
+
+                                6 => "bg-warning text-dark",
+
+                                7 => "bg-secondary",
+
+                                _ => "bg-light text-dark"
+                            };
+
+                            <tr data-type="@item.RequestTypeId">
+
+                                <!-- CHECKBOX -->
+                                <td data-label="تحديد">
+
+                                    <input type="checkbox"
+                                           class="row-check"
+                                           data-app="@item.ApprovalId" />
+
+                                </td>
 
                                 <!-- ACTIONS -->
                                 <td data-label="الإجراءات">
 
-                                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                    <div class="d-flex justify-content-center gap-2">
 
                                         <!-- APPROVE -->
                                         <button onclick="respond(@item.ApprovalId, @item.RequestId, 2)"
-                                                class="btn btn-success btn-sm">
+                                                class="btn btn-success btn-sm action-btn">
 
                                             <i class="fas fa-check-circle"></i>
 
@@ -75,7 +203,7 @@
 
                                         <!-- REJECT -->
                                         <button onclick="respond(@item.ApprovalId, @item.RequestId, 3)"
-                                                class="btn btn-danger btn-sm">
+                                                class="btn btn-danger btn-sm action-btn">
 
                                             <i class="fas fa-times-circle"></i>
 
@@ -88,16 +216,16 @@
                                 <!-- EMPLOYEE -->
                                 <td data-label="الموظف">
 
-                                    <div class="fw-bold text-dark">
+                                    <span class="fw-bold">
                                         @item.EmployeeName
-                                    </div>
+                                    </span>
 
                                 </td>
 
-                                <!-- REQUEST TYPE -->
+                                <!-- TYPE -->
                                 <td data-label="نوع الطلب">
 
-                                    <span class="badge bg-primary px-3 py-2">
+                                    <span class="badge @badgeClass px-3 py-2">
                                         @item.RequestType
                                     </span>
 
@@ -120,7 +248,8 @@
                             </tr>
                         }
                     }
-                    
+                   
+
 
                 </tbody>
 
@@ -131,82 +260,392 @@
     </div>
 
 </div>
-
-
 @section Scripts
 {
-
-    <!-- APPROVAL -->
     <script>
 
-        function respond(appId, reqId, status) {
+        $(document).ready(function () {
 
-            let actionText = status == 2 ? "موافقة" : "رفض";
+            // =========================
+            // GLOBAL STATE
+            // =========================
+            let selectedIds = [];
 
-            let actionColor = status == 2 ? "#198754" : "#dc3545";
+            var table = $('#example').DataTable();
 
-            Swal.fire({
+            window.currentFilter = 'all';
 
-                title: 'هل أنت متأكد؟',
+            // =========================
+            // DATATABLE FILTER
+            // =========================
+            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
-                text: 'سيتم تنفيذ الإجراء على الطلب',
+                let row = table.row(dataIndex).node();
 
-                icon: 'question',
+                let rowType = $(row).attr('data-type');
 
-                input: 'textarea',
+                if (window.currentFilter === 'all')
+                    return true;
 
-                inputPlaceholder: 'أضف ملاحظاتك هنا...',
-
-                showCancelButton: true,
-
-                confirmButtonText: actionText,
-
-                cancelButtonText: 'إلغاء',
-
-                confirmButtonColor: actionColor,
-
-                reverseButtons: true,
-
-                preConfirm: (notes) => {
-
-                    return $.post('/Leave/ProcessApproval', {
-
-                        approvalId: appId,
-                        requestId: reqId,
-                        status: status,
-                        notes: notes
-
-                    });
-
-                }
-
-            }).then((result) => {
-
-                if (result.value.success) {
-
-                    Swal.fire({
-
-                        icon: 'success',
-
-                        title: 'تم بنجاح',
-
-                        text: 'تم معالجة الطلب بنجاح',
-
-                        confirmButtonText: 'حسناً'
-
-                    }).then(() => {
-
-                        location.reload();
-
-                    });
-
-                }
+                return rowType === window.currentFilter;
 
             });
 
-        }
+            // =========================
+            // FILTER BUTTONS
+            // =========================
+            $('.filter-btn').on('click', function () {
+
+                $('.filter-btn')
+                    .removeClass('active btn-primary')
+                    .addClass('btn-outline-primary');
+
+                $(this)
+                    .removeClass('btn-outline-primary')
+                    .addClass('btn-primary active');
+
+                window.currentFilter = $(this).attr('data-type');
+
+                table.page('first').draw(false);
+
+            });
+
+            // =========================
+            // CHECKBOX CHANGE
+            // =========================
+            $(document).on('change', '.row-check', function () {
+
+                let id = parseInt($(this).data('app'));
+
+                if ($(this).is(':checked')) {
+
+                    if (!selectedIds.includes(id)) {
+                        selectedIds.push(id);
+                    }
+
+                } else {
+
+                    selectedIds = selectedIds.filter(x => x !== id);
+
+                }
+
+                console.log("selectedIds:", selectedIds);
+
+            });
+
+            // =========================
+            // SELECT ALL
+            // =========================
+            $('#selectAll').on('change', function () {
+
+                let checked = $(this).is(':checked');
+
+                // لو uncheck فضي الليست مرة واحدة
+                if (!checked) {
+                    selectedIds = [];
+                }
+
+                table.$('.row-check').each(function () {
+
+                    let id = parseInt($(this).data('app'));
+
+                    $(this).prop('checked', checked);
+
+                    if (checked) {
+
+                        if (!selectedIds.includes(id)) {
+                            selectedIds.push(id);
+                        }
+
+                    }
+
+                });
+
+                console.log("selectedIds:", selectedIds);
+
+            });
+
+            // =========================
+            // KEEP CHECKBOX STATE AFTER DRAW
+            // =========================
+            table.on('draw', function () {
+
+                $('.row-check').each(function () {
+
+                    let id = parseInt($(this).data('app'));
+
+                    if (selectedIds.includes(id)) {
+
+                        $(this).prop('checked', true);
+
+                    } else {
+
+                        $(this).prop('checked', false);
+
+                    }
+
+                });
+
+            });
+
+            // =========================
+            // BULK PROCESS
+            // =========================
+            function processBulk(status, all = false) {
+
+                let selected = [];
+
+                if (all) {
+
+                    selected = table.$('.row-check').map(function () {
+
+                        return parseInt($(this).data('app'));
+
+                    }).get();
+
+                } else {
+
+                    // استخدم الـ state المحفوظة
+                    selected = [...selectedIds];
+
+                }
+
+                console.log("Selected:", selected);
+
+                if (selected.length === 0) {
+
+                    Swal.fire(
+                        'تنبيه',
+                        'لم يتم اختيار أي طلب',
+                        'warning'
+                    );
+
+                    return;
+                }
+
+                let actionText = status == 2 ? "موافقة" : "رفض";
+
+                let actionColor = status == 2
+                    ? "#198754"
+                    : "#dc3545";
+
+                Swal.fire({
+
+                    title: 'تأكيد',
+
+                    html: `هل تريد <b>${actionText}</b> عدد <b>${selected.length}</b> طلب؟`,
+
+                    icon: 'question',
+
+                    showCancelButton: true,
+
+                    confirmButtonText: actionText,
+
+                    cancelButtonText: 'إلغاء',
+
+                    confirmButtonColor: actionColor,
+
+                    showLoaderOnConfirm: true,
+
+                    preConfirm: () => {
+
+                        return $.ajax({
+
+                            url: '/Leave/ProcessApprovalBulk',
+
+                            type: 'POST',
+
+                            contentType: 'application/json',
+
+                            data: JSON.stringify({
+
+                                approvalIds: selected,
+
+                                status: status,
+
+                                notes: ''
+
+                            })
+
+                        })
+                        .then(res => {
+
+                            if (!res.success) {
+
+                                throw new Error(
+                                    res.message || 'حدث خطأ'
+                                );
+
+                            }
+
+                            return res;
+
+                        })
+                        .catch(err => {
+
+                            Swal.showValidationMessage(
+                                err.message
+                            );
+
+                        });
+
+                    }
+
+                }).then((result) => {
+
+                    if (result.isConfirmed) {
+
+                        Swal.fire({
+
+                            icon: 'success',
+
+                            title: 'تم بنجاح',
+
+                            text: `تم تنفيذ العملية على ${result.value.count} طلب`,
+
+                            confirmButtonText: 'حسناً'
+
+                        }).then(() => {
+
+                            location.reload();
+
+                        });
+
+                    }
+
+                });
+
+            }
+
+            // =========================
+            // BUTTON EVENTS
+            // =========================
+            $('#approveSelected').click(function () {
+
+                processBulk(2);
+
+            });
+
+            $('#rejectSelected').click(function () {
+
+                processBulk(3);
+
+            });
+
+            $('#approveAll').click(function () {
+
+                processBulk(2, true);
+
+            });
+
+            // =========================
+            // SINGLE APPROVAL
+            // =========================
+            window.respond = function (appId, reqId, status) {
+
+                let actionText = status == 2
+                    ? "موافقة"
+                    : "رفض";
+
+                let actionColor = status == 2
+                    ? "#198754"
+                    : "#dc3545";
+
+                Swal.fire({
+
+                    title: 'هل أنت متأكد؟',
+
+                    text: 'سيتم تنفيذ الإجراء على الطلب',
+
+                    icon: 'question',
+
+                    input: 'textarea',
+
+                    inputPlaceholder: 'أضف ملاحظاتك هنا...',
+
+                    showCancelButton: true,
+
+                    confirmButtonText: actionText,
+
+                    cancelButtonText: 'إلغاء',
+
+                    confirmButtonColor: actionColor,
+
+                    reverseButtons: true,
+
+                    showLoaderOnConfirm: true,
+
+                    preConfirm: (notes) => {
+
+                        return $.ajax({
+
+                            url: '/Leave/ProcessApprovalBulk',
+
+                            type: 'POST',
+
+                            contentType: 'application/json',
+
+                            data: JSON.stringify({
+
+                                approvalIds: [appId],
+
+                                status: status,
+
+                                notes: notes
+
+                            })
+
+                        })
+                        .then(res => {
+
+                            if (!res.success) {
+
+                                throw new Error(
+                                    res.message || 'حدث خطأ'
+                                );
+
+                            }
+
+                            return res;
+
+                        })
+                        .catch(err => {
+
+                            Swal.showValidationMessage(
+                                err.message
+                            );
+
+                        });
+
+                    }
+
+                }).then((result) => {
+
+                    if (result.isConfirmed) {
+
+                        Swal.fire({
+
+                            icon: 'success',
+
+                            title: 'تم بنجاح',
+
+                            text: 'تم معالجة الطلب بنجاح',
+
+                            confirmButtonText: 'حسناً'
+
+                        }).then(() => {
+
+                            location.reload();
+
+                        });
+
+                    }
+
+                });
+
+            };
+
+        });
 
     </script>
-     
-
 }

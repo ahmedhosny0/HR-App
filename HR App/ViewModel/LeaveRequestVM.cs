@@ -15,6 +15,7 @@ namespace HR_App.ViewModel
         public string Notes { get; set; }
 
         public int Status { get; set; }
+        public int MedicalExam { get; set; }
         public int CurrentStep { get; set; }
         public bool IsMultipleDays { get; set; }
         public string? SelectedDays { get; set; }

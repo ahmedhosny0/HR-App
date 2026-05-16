@@ -6,10 +6,7 @@
 @{
     dynamic emp = ViewBag.CurrentEmployee;
 }
-@if (ViewBag.Role != "HeadOfficeHR")
-{
-    <input type="hidden" name="EmployeeId" value="@ViewBag.CurrentEmployeeId" />
-}
+
 <link rel="stylesheet" type="text/css" href="/css/components.css" />
 <link rel="stylesheet" type="text/css" href="/css/report.css" />
 <link rel="stylesheet" type="text/css" href="/css/base.css" />
@@ -173,19 +170,29 @@
                             الموظف
                         </label>
 
-                        <select name="EmployeeId"
-        class="form-select select2"
-                        @(ViewBag.Role != "HeadOfficeHR" ? "disabled" : "")
-        required>
+                        <select class="form-select select2"
+                                name="@(ViewBag.Role == "HeadOfficeHR" ? "EmployeeId" : "")"
+                               
+                                required>
 
-@*     <option value="">اختر الموظف</option>
- *@
                             @foreach (var e in ViewBag.Employees as List<SelectListItem>)
                             {
-                                <option value="@e.Value">@e.Text</option>
+                                if (e.Value == ViewBag.CurrentEmployeeId?.ToString())
+                                {
+                                    <option value="@e.Value" selected>@e.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@e.Value">@e.Text</option>
+                                }
                             }
 
-</select>
+                        </select>
+
+                        @if (ViewBag.Role != "HeadOfficeHR")
+                        {
+                            <input type="hidden" name="EmployeeId" value="@ViewBag.CurrentEmployeeId" />
+                        }
                     </div>
 
                     <!-- Request Type -->
@@ -213,7 +220,7 @@
                     </div>
 
                     <!-- From Date -->
-                    <div class="col-md-6" id="fromDateDiv">
+                    <div class="col-md-5" id="fromDateDiv">
                         <label class="form-label fw-bold">
                             من تاريخ
                         </label>
@@ -224,7 +231,7 @@
                     </div>
 
                     <!-- To Date -->
-                    <div class="col-md-6" id="toDateDiv">
+                    <div class="col-md-5" id="toDateDiv">
                         <label class="form-label fw-bold">
                             إلى تاريخ
                         </label>
@@ -239,7 +246,7 @@
 
                         <input class="form-check-input" type="checkbox" id="isMultipleDays">
 
-                        <label class="form-check-label fw-bold">
+                        <label for="isMultipleDays" class="form-check-label fw-bold">
                             اجازة لأيام متفرقة؟
                         </label>
 
@@ -259,6 +266,28 @@
 
                         <div id="selectedDaysPreview" class="mt-2 d-flex flex-wrap gap-2"></div>
 
+                    </div>
+                                        <!-- Request Type -->
+                    <div class="col-md-6" id="medical">
+                        <label class="form-label fw-bold">
+                            أين تم عمل الكشف الطبي
+                        </label>
+
+                        <select name="MedicalExam"
+                                class="form-select "
+                                >
+
+                            <option value="">
+                                اختر 
+                            </option>
+
+                                <option value="1">
+                                    داخل الشبكه (من خلال الكارنيه الطبي)
+                                </option>
+                                <option value= "2">خارج الشبكه (بدون الكارنيه الطبي)</option>
+                            
+
+                        </select>
                     </div>
                     <div id="missionFields" class="row g-3 mt-1" style="display:none;">
                         <!-- Time From -->
@@ -353,6 +382,7 @@
         // INIT HIDDEN FIELDS
         // =========================
         $('#missionFields').hide();
+        $('#medical').hide();
         $('#fileDiv').hide();
         $('#multipleDaysSection').hide();
 
@@ -417,7 +447,7 @@
         // =========================
         // REQUEST TYPE CHANGE
         // =========================
-        const SIMPLE_TYPES = ['1', '2', '3']; // اعتيادي - عارضة - مرضي
+        const SIMPLE_TYPES = ['1', '2']; // اعتيادي - عارضة - مرضي
 
         $('select[name="RequestTypeId"]').on('change', function () {
 
@@ -425,35 +455,39 @@
 
             // RESET
             $('#missionFields').hide();
+            $('#medical').hide();
             $('#fileDiv').hide();
-
-            // =========================
-            // SIMPLE LEAVES
-            // =========================
-            if (SIMPLE_TYPES.includes(typeId)) {
-
-                $('#missionFields').hide();
-                $('#fileDiv').hide();
-
-                $('#fromDateDiv').show();
+                            $('#fromDateDiv').show();
                 $('#toDateDiv').show();
                 $('#multipleDaysDiv').show();
                 $('#notesDiv').show();
-            }
+            // =========================
+            // SIMPLE LEAVES
+            // =========================
+            // if (SIMPLE_TYPES.includes(typeId)) {
 
-            // =========================
-            // EXAM
-            // =========================
-            else if (typeId == '4') {
+            //     $('#missionFields').hide();
+            //     $('#fileDiv').hide();
+
+            //     $('#fromDateDiv').show();
+            //     $('#toDateDiv').show();
+            //     $('#multipleDaysDiv').show();
+            //     $('#notesDiv').show();
+            // }
+
+            // // =========================
+            // // EXAM
+            // // =========================
+            // else 
+           if (typeId == '3') {
+
+                $('#medical').show();
+            }
+             else if (typeId == '4') {
 
                 $('#missionFields').hide();
 
                 $('#fileDiv').show();
-
-                $('#fromDateDiv').show();
-                $('#toDateDiv').show();
-                $('#multipleDaysDiv').show();
-                $('#notesDiv').show();
             }
 
             // =========================
@@ -492,6 +526,7 @@
         $('#requestForm').on('submit', function (e) {
 
             let typeId = $('select[name="RequestTypeId"]').val();
+            let medical = $('select[name="MedicalExam"]').val();
 
             let isMultiple = $('#isMultipleDays').is(':checked');
 
@@ -575,6 +610,21 @@
             // =========================
             // MISSION VALIDATION
             // =========================
+            if (typeId == '3') {
+
+                if (!medical) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يجب إدخال جهة الكشف الطبي'
+                    });
+
+                    return;
+                }
+            }
             if (typeId == '5' || typeId == '6') {
 
                 if (!fromTime || !toTime) {
@@ -650,6 +700,54 @@
                     return;
                 }
             }
+                // =========================
+    // SICK LEAVE WARNING
+    // =========================
+    if (typeId == '3') {
+
+        e.preventDefault(); // نوقف الإرسال مؤقتًا
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه مهم',
+            html: `
+                <div style="text-align:right">
+                    <p>⚠️ بعد 3 شهور يتم خصم 15% من المرتب</p>
+                    <p>⚠️ بعد 9 شهور يتم خصم 25% من المرتب</p>
+                    <p>⚠️ بعد 12 شهر يتم اعتبارها غياب</p>
+                    <br/>
+                    <strong>هل أنت موافق؟</strong>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'تمام موافق',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+
+                Swal.fire({
+                    icon: 'info',
+                    title: 'إجراء مطلوب',
+                    html: `
+                        <div style="text-align:right">
+                            يجب التوجه لإدارة الموارد البشرية<br/>
+                            بنموذج إجازة مرضي<br/>
+                            مع إثبات الكشف
+                        </div>
+                    `,
+                    confirmButtonText: 'حسناً'
+                }).then(() => {
+                    // بعد الموافقة نكمل الإرسال
+                    $('#requestForm')[0].submit();
+                });
+
+            }
+
+        });
+
+        return; // مهم جدًا علشان يمنع الإرسال الطبيعي
+    }
 
         });
 

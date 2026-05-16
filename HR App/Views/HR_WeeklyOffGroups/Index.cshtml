@@ -1,0 +1,153 @@
+﻿@model List<HR_App.ViewModel.WeeklyOffGroupVM>
+
+@{
+    ViewData["Title"] = "Weekly Off Groups";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow border-0">
+
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+
+            <h4 class="mb-0">
+                Weekly Off Groups
+            </h4>
+
+            <a asp-action="Create"
+               class="btn btn-success">
+
+                <i class="fa fa-plus"></i>
+                Add New
+
+            </a>
+
+        </div>
+
+        <div class="card-body">
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">
+                    @Html.Raw(TempData["Success"])
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">
+                    @Html.Raw(TempData["Error"])
+                </div>
+            }
+
+            <table class="table table-bordered table-hover">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>#</th>
+
+                        <th>Group Name</th>
+
+                        <th>Status</th>
+
+                        <th>Created Date</th>
+
+                        <th width="180">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        int count = 1;
+
+                        foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @count
+                                </td>
+
+                                <td>
+                                    @item.GroupName
+                                </td>
+
+                                <td>
+
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">
+                                            Inactive
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+                                    @item.CreatedDate.ToString("yyyy-MM-dd")
+                                </td>
+
+                                <td>
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.WeeklyOffGroupId"
+                                       class="btn btn-primary btn-sm">
+
+                                        <i class="fa fa-edit"></i>
+
+                                    </a>
+
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.WeeklyOffGroupId"
+                                       class="btn btn-danger btn-sm"
+                                       onclick="return confirm('هل أنت متأكد ؟')">
+
+                                        <i class="fa fa-trash"></i>
+
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+                            count++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="5"
+                                class="text-center text-muted">
+
+                                No Data
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

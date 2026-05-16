@@ -1,0 +1,150 @@
+﻿@model HR_App.ViewModel.WeeklyOffGroupVM
+
+@{
+    ViewData["Title"] = "Create Weekly Off Group";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var days = ViewBag.Days as List<HR_App.ViewModel.WeekDayVM>;
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow border-0">
+
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                Weekly Off Group
+            </h4>
+        </div>
+
+        <div class="card-body">
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">
+                    @Html.Raw(TempData["Error"])
+                </div>
+            }
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">
+                    @Html.Raw(TempData["Success"])
+                </div>
+            }
+
+            <form asp-action="Create" method="post">
+
+                <div class="row">
+
+                    <!-- Group Name -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">
+                            Group Name
+                        </label>
+
+                        <input asp-for="GroupName"
+                               class="form-control"
+                               placeholder="مثال : جمعة وسبت" />
+
+                        <span asp-validation-for="GroupName"
+                              class="text-danger"></span>
+                    </div>
+
+                    <!-- Is Active -->
+                    <div class="col-md-6 mb-3 d-flex align-items-center">
+
+                        <div class="form-check mt-4">
+
+                            <input asp-for="IsActive"
+                                   class="form-check-input" />
+
+                            <label class="form-check-label">
+                                Active
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- Days -->
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold mb-3">
+                        Weekly Off Days
+                    </label>
+
+                    <div class="row">
+
+                        @foreach (var item in days)
+                        {
+                            <div class="col-md-3 mb-2">
+
+                                <div class="form-check border rounded p-2">
+
+                                    <input type="checkbox"
+                                           class="form-check-input"
+                                           name="SelectedDays"
+                                           value="@item.WeekDayId"
+                                           id="day_@item.WeekDayId"
+
+                                    @(Model.SelectedDays.Contains(item.WeekDayId)
+                                        ? "checked"
+                                        : "") />
+
+                                    <label class="form-check-label ms-2"
+                                           for="day_@item.WeekDayId">
+
+                                        @item.DayNameAr
+
+                                    </label>
+
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- Buttons -->
+                <div class="d-flex gap-2">
+
+                    <button type="submit"
+                            class="btn btn-success">
+
+                        <i class="fa fa-save"></i>
+                        Save
+
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn btn-secondary">
+
+                        Back
+
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

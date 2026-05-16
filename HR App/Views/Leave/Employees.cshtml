@@ -43,23 +43,28 @@
 
                         <th>الإجراءات</th>
 
-                        <th>#</th>
-
+@*                         <th>#</th>
+ *@
                         <th>الكود</th>
 
                         <th>اسم الموظف</th>
 
                         <th>الدور</th>
 
-                        <th>الوظيفة</th>
-
+@*                         <th>الوظيفة</th>
+ *@
                         <th>تاريخ التعيين</th>
                         <th>تاريخ التأمين</th>
-                        <th>رصيد السنوي</th>
+                        <th>اعتيادي</th>
+                        <th>مستخدم</th>
                         <th>العارضة</th>
-                        <th>المرضي المستخدم</th>
-                        <th>آخر تحديث الرصيد</th>
-                        <th>الحالة</th>
+                        <th>مستخدم</th>
+                        <th>المرضي</th>
+                        <th>مستخدم</th>
+                        <th>الامتحانات</th>
+                        <th>مستخدم</th>
+@*                         <th>آخر تحديث الرصيد</th>
+ *@                        <th>الحالة</th>
 
                     </tr>
 
@@ -88,11 +93,11 @@
 
                             </td>
 
-                            <!-- ID -->
-                            <td data-label="#">
+                           @*  <!-- ID -->
+                            <td  style="display:none" data-label="#">
                                 @item.EmployeeId
                             </td>
-
+ *@
                             <!-- CODE -->
                             <td data-label="الكود">
                                 @item.EmployeeCode
@@ -112,10 +117,10 @@
                                 @item.RoleName
                             </td>
 
-                            <!-- JOB -->
+                           @*  <!-- JOB -->
                             <td data-label="الوظيفة">
                                 @item.JobTitle
-                            </td>
+                            </td> *@
 
                             <!-- HIRE DATE -->
                             <td data-label="تاريخ التعيين">
@@ -128,17 +133,30 @@
                             <td data-label="الرصيد الثانوي">
                                 @item.AnnualLeaveBalance
                             </td>
+                            <td data-label="مستخدم">
+                                @item.AnnualLeaveUsedDays
+                            </td>
                             <td data-label="العارضة">
                                 @item.CasualLeaveBalance
                             </td>
-
-                            <td data-label="المرضي المستخدم">
+                            <td data-label="مستخدم">
+                                @item.CasualLeaveUsedDays
+                            </td>
+                            <td data-label="المرضي">
+                                @item.SickLeaveBalance
+                            </td>
+                            <td data-label="مستخدم">
                                 @item.SickLeaveUsedDays
                             </td>
-
-                            <td data-label="آخر تحديث الرصيد">
-                                @item.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd")
+                            <td data-label="الإمتحانات">
+                                @item.ExamLeaveBalance
                             </td>
+                            <td data-label="مستخدم">
+                                @item.ExamLeaveUsedDays
+                            </td>
+                           @*  <td data-label="آخر تحديث الرصيد">
+                                @item.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd")
+                            </td> *@
                             <!-- STATUS -->
                             <td data-label="الحالة">
 

@@ -3,6 +3,7 @@
     public class PendingRequestVM
     {
         public int ApprovalId { get; set; }     // كود خطوة الموافقة عشان نعرف نحدثها
+        public int RequestTypeId { get; set; }     // كود خطوة الموافقة عشان نعرف نحدثها
         public int RequestId { get; set; }      // كود الطلب الأصلي
         public string EmployeeName { get; set; } // اسم الموظف اللي قدم الطلب
         public string RequestType { get; set; }  // نوع الطلب (إجازة، إذن، إلخ)

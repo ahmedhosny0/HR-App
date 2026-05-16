@@ -1,0 +1,279 @@
+﻿@model List<HR_App.ViewModel.RequestDetailsVM>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <!-- FILTER CARD -->
+    <form id="filterForm" asp-action="AllRequests" method="post" onsubmit="return validateDates()">
+
+        <div class="card shadow-sm p-3 mb-3">
+
+            <div class="row g-3 align-items-end">
+
+                <!-- DATE FROM -->
+                <div class="col-md-3">
+                    <label class="form-label">من تاريخ</label>
+                    <input type="date" name="startDate" class="form-control" />
+                </div>
+
+                <!-- DATE TO -->
+                <div class="col-md-3">
+                    <label class="form-label">إلي تاريخ</label>
+                    <input type="date" name="endDate" class="form-control" />
+                </div>
+
+                <!-- BRANCH -->
+                <!--<div class="col-md-3" id="Store">
+                    <label class="form-label">الفرع</label>
+                    <select class="form-control select2" name="Branch">
+                        <option value="">
+                            اختر 
+                        </option>  @foreach (var t in ViewBag.Branches as List<SelectListItem>)
+                        {
+                            <option value="@t.Value">
+                                @t.Text
+                            </option>
+                        }
+                    </select>
+                </div>-->
+
+                <!-- CHECKBOXES (MUTEX GROUP) -->
+                <div class="col-md-3">
+                    <label class="form-label">نوع العرض</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <label class="form-check">
+                            <input type="checkbox" name="All" value="true" class="form-check-input filter-check">
+                            الكل
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="Yes" value="true" class="form-check-input filter-check">
+                           مقبول
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="No" value="true" class="form-check-input filter-check">
+                            مرفوض
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="Wait" value="true" class="form-check-input filter-check">
+                            إنتظار
+                        </label>
+
+                    </div>
+                </div>
+                <!-- ROW 2 -->
+                <div class="row g-3 mt-1 align-items-end">
+
+                    
+
+                    <div class="col-md-3 d-flex gap-2">
+
+                        <button type="submit" class="btn btn-primary w-50">
+                            🔍 عرض
+                        </button>
+
+                       
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </form>
+    <!-- HEADER -->
+    <div class="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        <div>
+            <p class="badge bg-info fs-6 px-3 py-2">
+                جميع الطلبات والتفاصيل
+            </p>
+        </div>
+
+        <div>
+            <span class="badge bg-dark fs-6 px-3 py-2">
+                إجمالي الطلبات :
+                @(Model?.Count ?? 0)
+            </span>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="report-container">
+        <div class="table-responsive">
+
+            <table id="example" class="table-modern">
+
+                <thead>
+                    <tr>
+                        <th>الحالة</th>
+                        <th>الموظف</th>
+                        <th>المدير</th>
+                        <th>نوع الطلب</th>
+                        <th>من</th>
+                        <th>إلى</th>
+                        <th>تاريخ الإنشاء</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model != null && Model.Count > 0)
+                    {
+                    @foreach (var item in Model)
+                    {
+                        string badgeClass =
+                        item.StatusName == "مقبول" ? "bg-success" :
+                        item.StatusName == "مرفوض" ? "bg-danger" :
+                        "bg-warning text-dark";
+
+                        <tr>
+
+                            <!-- STATUS -->
+                            <td data-label="الحالة">
+                                <span class="badge @badgeClass px-3 py-2">
+                                    @item.StatusName
+                                </span>
+                            </td>
+
+                            <!-- EMPLOYEE -->
+                            <td data-label="الموظف">
+                                <span class="fw-bold">@item.Employee</span>
+                            </td>
+
+                            <!-- MANAGER -->
+                            <td data-label="المدير">
+                                <span class="text-muted">@item.Manager</span>
+                            </td>
+
+                            <!-- TYPE -->
+                            <td data-label="نوع الطلب">
+                                <span class="badge bg-primary px-3 py-2">
+                                    @item.RequestType
+                                </span>
+                            </td>
+
+                            <!-- FROM -->
+                            <td data-label="من">
+                                @item.FromDate.ToString("yyyy-MM-dd")
+                            </td>
+
+                            <!-- TO -->
+                            <td data-label="إلى">
+                                @item.ToDate.ToString("yyyy-MM-dd")
+                            </td>
+
+                            <!-- CREATED -->
+                            <td data-label="تاريخ الإنشاء">
+                                @item.CreatedDate.ToString("yyyy-MM-dd")
+                            </td>
+
+                        </tr>
+                    }
+
+                    }
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+@section Scripts
+{
+    <script>
+                       document.addEventListener("DOMContentLoaded", function () {
+
+            const checkboxes = document.querySelectorAll(".filter-check");
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener("change", function () {
+                    if (this.checked) {
+                        checkboxes.forEach(other => {
+                            if (other !== this) {
+                                other.checked = false;
+                            }
+                        });
+                    }
+                });
+            });
+
+        });
+                function getDates() {
+            const startDate = document.querySelector('input[name="startDate"]').value;
+            const endDate = document.querySelector('input[name="endDate"]').value;
+
+            return { startDate, endDate };
+        }
+
+        // ✅ validation للعرض
+        function validateDates() {
+
+            const { startDate, endDate } = getDates();
+        const no = document.querySelector('input[name="No"]').checked;
+           const all = document.querySelector('input[name="All"]').checked;
+           const perDay = document.querySelector('input[name="PerDay"]').checked;
+
+           if (!startDate || !endDate) {
+               Swal.fire({
+                   icon: 'warning',
+                   title: 'تنبيه',
+                   text: 'من فضلك اختر من تاريخ وإلى تاريخ أولاً'
+               });
+               return false;
+           }
+
+           // ✅ لازم يختار واحد على الأقل
+           if (!no && !all && !perDay) {
+               Swal.fire({
+                   icon: 'warning',
+                   title: 'تنبيه',
+                   text: 'من فضلك اختر نوع عرض واحد على الأقل'
+               });
+               return false;
+           }
+
+            return true;
+        }
+
+        // ✅ validation + sync للـ PDF/Word
+        function validateDatesAndSync() {
+
+            const { startDate, endDate } = getDates();
+            const branch = document.querySelector('select[name="Branch"]').value;
+                 const no = document.querySelector('input[name="No"]').checked;
+        const all = document.querySelector('input[name="All"]').checked;
+        const perDay = document.querySelector('input[name="PerDay"]').checked;
+            if (!startDate || !endDate) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'تنبيه',
+                    text: 'لا يمكن التصدير بدون تحديد التاريخ'
+                });
+                return false;
+            }
+
+            // sync values
+            document.getElementById("pdfStartDate").value = startDate;
+            document.getElementById("pdfEndDate").value = endDate;
+            document.getElementById("pdfBranch").value = branch;
+
+            document.getElementById("wordStartDate").value = startDate;
+            document.getElementById("wordEndDate").value = endDate;
+            document.getElementById("wordBranch").value = branch;
+                // ====== CHECKBOX SYNC ======
+        document.getElementById("pdfNo").value = no;
+        document.getElementById("pdfAll").value = all;
+        document.getElementById("pdfPerDay").value = perDay;
+
+        document.getElementById("wordNo").value = no;
+        document.getElementById("wordAll").value = all;
+        document.getElementById("wordPerDay").value = perDay;
+            return true;
+        }
+
+    </script>
+}

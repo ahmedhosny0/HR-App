@@ -502,8 +502,41 @@ namespace HR_App.Controllers
             return RedirectToAction("WorkflowSteps");
         }
         #region Employee
+        private void LoadWeeklyOffGroups()
+        {
+            List<SelectListItem> groups = new List<SelectListItem>();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                string q = @"
+        SELECT
+            WeeklyOffGroupId,
+            GroupName
+        FROM HR_WeeklyOffGroups
+        WHERE IsActive = 1
+        ORDER BY GroupName";
+
+                SqlCommand cmd = new SqlCommand(q, con);
+
+                con.Open();
+
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    groups.Add(new SelectListItem
+                    {
+                        Value = dr["WeeklyOffGroupId"].ToString(),
+                        Text = dr["GroupName"].ToString()
+                    });
+                }
+            }
+
+            ViewBag.WeeklyOffGroups = groups;
+        }
         public IActionResult CreateEmployee()
         {
+            LoadWeeklyOffGroups();
             var roles = new List<SelectListItem>();
 
             using (SqlConnection con = new SqlConnection(connStr))
@@ -791,8 +824,13 @@ Emp.HireDate,
 Emp.InsuranceStartDate,
 Emp.IsActive,
 Emp.AnnualLeaveBalance,
+Emp.AnnualLeaveUsedDays,
 Emp.CasualLeaveBalance,
+Emp.CasualLeaveUsedDays,
+Emp.SickLeaveBalance,
 Emp.SickLeaveUsedDays,
+Emp.ExamLeaveBalance,
+Emp.ExamLeaveUsedDays,
 Emp.LastLeaveBalanceUpdate,
 Role.RoleName
 FROM HR_Employees Emp
@@ -814,12 +852,27 @@ ON Emp.RoleId = Role.RoleId
                         AnnualLeaveBalance = dr["AnnualLeaveBalance"] == DBNull.Value
     ? 0
     : Convert.ToInt32(dr["AnnualLeaveBalance"]),
+                        AnnualLeaveUsedDays = dr["AnnualLeaveUsedDays"] == DBNull.Value
+    ? 0
+    : Convert.ToInt32(dr["AnnualLeaveUsedDays"]),
                         CasualLeaveBalance = dr["CasualLeaveBalance"] == DBNull.Value
     ? 0
     : Convert.ToInt32(dr["CasualLeaveBalance"]),
+                        CasualLeaveUsedDays = dr["CasualLeaveUsedDays"] == DBNull.Value
+    ? 0
+    : Convert.ToInt32(dr["CasualLeaveUsedDays"]),
+                        SickLeaveBalance = dr["SickLeaveBalance"] == DBNull.Value
+    ? 0
+    : Convert.ToInt32(dr["SickLeaveBalance"]),
                         SickLeaveUsedDays = dr["SickLeaveUsedDays"] == DBNull.Value
     ? 0
     : Convert.ToInt32(dr["SickLeaveUsedDays"]),
+                        ExamLeaveBalance = dr["ExamLeaveBalance"] == DBNull.Value
+    ? 0
+    : Convert.ToInt32(dr["ExamLeaveBalance"]),
+                        ExamLeaveUsedDays = dr["ExamLeaveUsedDays"] == DBNull.Value
+    ? 0
+    : Convert.ToInt32(dr["ExamLeaveUsedDays"]),
 
                         EmployeeCode = dr["EmployeeCode"] == DBNull.Value
     ? ""
@@ -906,38 +959,41 @@ ON Emp.RoleId = Role.RoleId
                     model.RoleId = dr["RoleId"] == DBNull.Value
                         ? null
                         : Convert.ToInt32(dr["RoleId"]);
+                    model.WeeklyOffGroupId = dr["WeeklyOffGroupId"] == DBNull.Value
+                      ? null
+                      : Convert.ToInt32(dr["WeeklyOffGroupId"]);
 
                     model.HireDate = dr["HireDate"] == DBNull.Value
     ? null
     : Convert.ToDateTime(dr["HireDate"]); 
 
-                    model.LeaveDate = dr["LeaveDate"] == DBNull.Value
-                        ? null
-                        : Convert.ToDateTime(dr["LeaveDate"]);
+                    //model.LeaveDate = dr["LeaveDate"] == DBNull.Value
+                    //    ? null
+                    //    : Convert.ToDateTime(dr["LeaveDate"]);
 
                     model.InsuranceStartDate = dr["InsuranceStartDate"] == DBNull.Value
                         ? null
                         : Convert.ToDateTime(dr["InsuranceStartDate"]);
 
                     model.IsActive = Convert.ToBoolean(dr["IsActive"]);
-                    model.AnnualLeaveBalance = dr["AnnualLeaveBalance"] == DBNull.Value
-    ? 0
-    : Convert.ToDecimal(dr["AnnualLeaveBalance"]);
+    //                model.AnnualLeaveBalance = dr["AnnualLeaveBalance"] == DBNull.Value
+    //? 0
+    //: Convert.ToDecimal(dr["AnnualLeaveBalance"]);
 
-                    model.CasualLeaveBalance = dr["CasualLeaveBalance"] == DBNull.Value
-                        ? 0
-                        : Convert.ToDecimal(dr["CasualLeaveBalance"]);
+    //                model.CasualLeaveBalance = dr["CasualLeaveBalance"] == DBNull.Value
+    //                    ? 0
+    //                    : Convert.ToDecimal(dr["CasualLeaveBalance"]);
 
-                    model.SickLeaveUsedDays = dr["SickLeaveUsedDays"] == DBNull.Value
-                        ? 0
-                        : Convert.ToInt32(dr["SickLeaveUsedDays"]);
+    //                model.SickLeaveUsedDays = dr["SickLeaveBalance"] == DBNull.Value
+    //                    ? 0
+    //                    : Convert.ToInt32(dr["SickLeaveBalance"]);
 
-                    model.LastLeaveBalanceUpdate = dr["LastLeaveBalanceUpdate"] == DBNull.Value
-                        ? null
-                        : Convert.ToDateTime(dr["LastLeaveBalanceUpdate"]);
+                    //model.LastLeaveBalanceUpdate = dr["LastLeaveBalanceUpdate"] == DBNull.Value
+                    //    ? null
+                    //    : Convert.ToDateTime(dr["LastLeaveBalanceUpdate"]);
                 }
             }
-
+            LoadWeeklyOffGroups();
             return View(model);
         }
 
@@ -1026,14 +1082,15 @@ SET
     RoleId = @RoleId,
     JobTitle = @Job,
     HireDate = @HireDate,
-    LeaveDate = @LeaveDate,
+    --LeaveDate = @LeaveDate,
     InsuranceStartDate = @Insurance,
     IsActive = @IsActive,
+    WeeklyOffGroupId = @WeeklyOffGroupId--,
 
-    AnnualLeaveBalance = @AnnualLeaveBalance,
-    CasualLeaveBalance = @CasualLeaveBalance,
-    LastLeaveBalanceUpdate = @LastLeaveBalanceUpdate,
-    SickLeaveUsedDays = @SickLeaveUsedDays
+    --AnnualLeaveBalance = @AnnualLeaveBalance,
+    --CasualLeaveBalance = @CasualLeaveBalance,
+   -- LastLeaveBalanceUpdate = @LastLeaveBalanceUpdate,
+   -- SickLeaveUsedDays = @SickLeaveUsedDays
 
 WHERE EmployeeId = @Id";
 
@@ -1059,7 +1116,12 @@ WHERE EmployeeId = @Id";
                         ? DBNull.Value
                         : (object)model.RoleId
                 );
-
+                cmd.Parameters.AddWithValue(
+                   "@WeeklyOffGroupId",
+                   model.WeeklyOffGroupId == null
+                       ? DBNull.Value
+                       : (object)model.WeeklyOffGroupId
+               );
                 cmd.Parameters.AddWithValue(
                     "@Job",
                     string.IsNullOrWhiteSpace(model.JobTitle)
@@ -1067,12 +1129,12 @@ WHERE EmployeeId = @Id";
                         : (object)model.JobTitle
                 );
                 
-                cmd.Parameters.AddWithValue(
-                    "@LastLeaveBalanceUpdate",
-                    model.LastLeaveBalanceUpdate == null
-                        ? DBNull.Value
-                        : (object)model.LastLeaveBalanceUpdate
-                );
+                //cmd.Parameters.AddWithValue(
+                //    "@LastLeaveBalanceUpdate",
+                //    model.LastLeaveBalanceUpdate == null
+                //        ? DBNull.Value
+                //        : (object)model.LastLeaveBalanceUpdate
+                //);
                 cmd.Parameters.AddWithValue(
                   "@HireDate",
                   model.HireDate == null
@@ -1080,12 +1142,12 @@ WHERE EmployeeId = @Id";
                       : (object)model.HireDate
               );
 
-                cmd.Parameters.AddWithValue(
-                    "@LeaveDate",
-                    model.LeaveDate == null
-                        ? DBNull.Value
-                        : (object)model.LeaveDate
-                );
+                //cmd.Parameters.AddWithValue(
+                //    "@LeaveDate",
+                //    model.LeaveDate == null
+                //        ? DBNull.Value
+                //        : (object)model.LeaveDate
+                //);
 
                 cmd.Parameters.AddWithValue(
                     "@Insurance",
@@ -1096,23 +1158,23 @@ WHERE EmployeeId = @Id";
 
                 cmd.Parameters.AddWithValue("@IsActive", model.IsActive);
 
-                // =========================
-                // LEAVE BALANCE
-                // =========================
-                cmd.Parameters.AddWithValue(
-                    "@AnnualLeaveBalance",
-                    model.AnnualLeaveBalance
-                );
+                //// =========================
+                //// LEAVE BALANCE
+                //// =========================
+                //cmd.Parameters.AddWithValue(
+                //    "@AnnualLeaveBalance",
+                //    model.AnnualLeaveBalance
+                //);
 
-                cmd.Parameters.AddWithValue(
-                    "@CasualLeaveBalance",
-                    model.CasualLeaveBalance
-                );
+                //cmd.Parameters.AddWithValue(
+                //    "@CasualLeaveBalance",
+                //    model.CasualLeaveBalance
+                //);
 
-                cmd.Parameters.AddWithValue(
-                    "@SickLeaveUsedDays",
-                    model.SickLeaveUsedDays
-                );
+                //cmd.Parameters.AddWithValue(
+                //    "@SickLeaveUsedDays",
+                //    model.SickLeaveUsedDays
+                //);
 
                 cmd.Parameters.AddWithValue("@Id", model.EmployeeId);
 
@@ -1579,7 +1641,10 @@ WHERE EmployeeId = @EmployeeId";
                             ExamBalance = dr["ExamLeaveBalance"],
                             ExamUsed = dr["ExamLeaveUsedDays"]
                         };
+                        ViewBag.CurrentEmployeeId = dr["EmployeeId"];
+
                     }
+
                 }
 
                 ViewBag.CurrentEmployee = emp;
@@ -1823,11 +1888,11 @@ WHERE EmployeeId = @EmployeeId";
                         string insertSql = @"
 INSERT INTO HR_Requests
 (RequestTypeId, EmployeeId, FromDate, ToDate, FromTime, ToTime,
- Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate)
+ Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate,MedicalExam)
 OUTPUT INSERTED.RequestId
 VALUES
 (@TypeId, @EmpId, @FromDate, @ToDate, @FromTime, @ToTime,
- @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE());";
+ @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE(),@MedicalExam);";
 
                         List<string> insertedDays = new List<string>();
                         List<string> skippedDays = new List<string>();
@@ -1858,6 +1923,7 @@ VALUES
                             SqlCommand insertCmd = new SqlCommand(insertSql, con, transaction);
 
                             insertCmd.Parameters.Add("@TypeId", SqlDbType.Int).Value = model.RequestTypeId;
+                            insertCmd.Parameters.Add("@MedicalExam", SqlDbType.Int).Value = model.MedicalExam;
                             insertCmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = model.EmployeeId;
                             insertCmd.Parameters.Add("@FromDate", SqlDbType.Date).Value = date;
                             insertCmd.Parameters.Add("@ToDate", SqlDbType.Date).Value = date;
@@ -1975,7 +2041,7 @@ WHERE e.IsActive = 1;";
                 // Query بتجيب بيانات الطلب + بيانات الموظف اللي قدمه من جدول الـ Approvals
                 string sql = @"
              SELECT a.ApproverId ,a.ApprovalId, a.RequestId, r.EmployeeId, e.EmployeeName, 
-        rt.Name TypeName, r.FromDate, r.ToDate, a.StepOrder
+        rt.Name TypeName, r.FromDate, r.ToDate, a.StepOrder,r.RequestTypeId
  FROM HR_RequestApprovals a
  JOIN HR_Requests r ON a.RequestId = r.RequestId
  JOIN HR_Employees e ON r.EmployeeId = e.EmployeeId
@@ -1994,6 +2060,7 @@ WHERE e.IsActive = 1;";
                         ApprovalId = (int)rdr["ApprovalId"],
                         RequestId = (int)rdr["RequestId"],
                         EmployeeName = rdr["EmployeeName"].ToString(),
+                        RequestTypeId = (int)rdr["RequestTypeId"],
                         RequestType = rdr["TypeName"].ToString(),
                         FromDate = (DateTime)rdr["FromDate"],
                         ToDate = (DateTime)rdr["ToDate"]
@@ -2003,59 +2070,197 @@ WHERE e.IsActive = 1;";
             return View(pendingRequests);
         }
         [HttpPost]
-        public IActionResult ProcessApproval(int approvalId, int requestId, int status, string notes)
+        public IActionResult ProcessApprovalBulk([FromBody] ProcessApprovalBulkVM model)
         {
+            // =========================
+            // VALIDATION
+            // =========================
+            if (model == null ||
+                model.ApprovalIds == null ||
+                model.ApprovalIds.Count == 0)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "لا يوجد عناصر"
+                });
+            }
+
             using (SqlConnection con = new SqlConnection(connStr))
             {
                 con.Open();
+
                 using (SqlTransaction trans = con.BeginTransaction())
                 {
                     try
                     {
-                        // 1. تحديث الخطوة الحالية (موافقة 2 أو رفض 3)
-                        string updateCurrent = @"UPDATE HR_RequestApprovals 
-                                         SET Status = @Status, ActionDate = GETDATE(), Notes = @Notes 
-                                         WHERE ApprovalId = @AppId";
-                        SqlCommand cmd1 = new SqlCommand(updateCurrent, con, trans);
-                        cmd1.Parameters.AddWithValue("@Status", status);
-                        cmd1.Parameters.AddWithValue("@Notes", notes ?? "");
-                        cmd1.Parameters.AddWithValue("@AppId", approvalId);
-                        cmd1.ExecuteNonQuery();
-
-                        if (status == 2) // حالة الموافقة
+                        foreach (var approvalId in model.ApprovalIds)
                         {
-                            // 2. تفعيل الخطوة التالية (لو موجودة)
-                            string activateNext = @"UPDATE HR_RequestApprovals 
-                                            SET Status = 1 
-                                            WHERE RequestId = @ReqId AND StepOrder = 
-                                            (SELECT StepOrder + 1 FROM HR_RequestApprovals WHERE ApprovalId = @AppId)";
-                            SqlCommand cmd2 = new SqlCommand(activateNext, con, trans);
-                            cmd2.Parameters.AddWithValue("@ReqId", requestId);
-                            cmd2.Parameters.AddWithValue("@AppId", approvalId);
-                            int nextRows = cmd2.ExecuteNonQuery();
+                            // =========================
+                            // GET REQUEST DATA
+                            // =========================
+                            string getReq = @"
+                        SELECT 
+                            RequestId,
+                            StepOrder
+                        FROM HR_RequestApprovals
+                        WHERE ApprovalId = @AppId";
 
-                            // 3. لو مفيش خطوة تانية، يبقى الطلب اكتمل نهائياً
-                            if (nextRows == 0)
+                            SqlCommand getCmd = new SqlCommand(getReq, con, trans);
+
+                            getCmd.Parameters.AddWithValue("@AppId", approvalId);
+
+                            int requestId = 0;
+                            int stepOrder = 0;
+
+                            using (var reader = getCmd.ExecuteReader())
                             {
-                                string finalizeReq = "UPDATE HR_Requests SET Status = 1 WHERE RequestId = @ReqId";
-                                new SqlCommand(finalizeReq, con, trans).Parameters.AddWithValue("@ReqId", requestId);
-                                // هنا ممكن تضيف كود خصم الرصيد
+                                if (reader.Read())
+                                {
+                                    requestId = Convert.ToInt32(reader["RequestId"]);
+                                    stepOrder = Convert.ToInt32(reader["StepOrder"]);
+                                }
+                            }
+
+                            // لو الطلب مش موجود
+                            if (requestId == 0)
+                            {
+                                throw new Exception($"ApprovalId {approvalId} غير موجود");
+                            }
+
+                            // =========================
+                            // UPDATE CURRENT STEP
+                            // =========================
+                            string updateCurrent = @"
+                        UPDATE HR_RequestApprovals
+                        SET
+                            Status = @Status,
+                            ActionDate = GETDATE(),
+                            Notes = @Notes
+                        WHERE ApprovalId = @AppId";
+
+                            SqlCommand cmd1 = new SqlCommand(updateCurrent, con, trans);
+
+                            cmd1.Parameters.AddWithValue("@Status", model.Status);
+
+                            cmd1.Parameters.AddWithValue(
+                                "@Notes",
+                                model.Notes ?? ""
+                            );
+
+                            cmd1.Parameters.AddWithValue(
+                                "@AppId",
+                                approvalId
+                            );
+
+                            cmd1.ExecuteNonQuery();
+
+                            // =========================
+                            // APPROVED
+                            // =========================
+                            if (model.Status == 2)
+                            {
+                                // تفعيل الخطوة التالية
+                                string activateNext = @"
+                            UPDATE HR_RequestApprovals
+                            SET Status = 1
+                            WHERE RequestId = @ReqId
+                            AND StepOrder = @NextStep";
+
+                                SqlCommand cmd2 = new SqlCommand(
+                                    activateNext,
+                                    con,
+                                    trans
+                                );
+
+                                cmd2.Parameters.AddWithValue(
+                                    "@ReqId",
+                                    requestId
+                                );
+
+                                cmd2.Parameters.AddWithValue(
+                                    "@NextStep",
+                                    stepOrder + 1
+                                );
+
+                                int nextRows = cmd2.ExecuteNonQuery();
+
+                                // =========================
+                                // FINAL APPROVAL
+                                // =========================
+                                if (nextRows == 0)
+                                {
+                                    string finalizeReq = @"
+                                UPDATE HR_Requests
+                                SET Status = 1
+                                WHERE RequestId = @ReqId";
+
+                                    SqlCommand cmd3 = new SqlCommand(
+                                        finalizeReq,
+                                        con,
+                                        trans
+                                    );
+
+                                    cmd3.Parameters.AddWithValue(
+                                        "@ReqId",
+                                        requestId
+                                    );
+
+                                    cmd3.ExecuteNonQuery();
+
+                                    // =========================
+                                    // OPTIONAL:
+                                    // خصم الرصيد هنا
+                                    // =========================
+                                }
+                            }
+
+                            // =========================
+                            // REJECTED
+                            // =========================
+                            else if (model.Status == 3)
+                            {
+                                string rejectReq = @"
+                            UPDATE HR_Requests
+                            SET Status = 2
+                            WHERE RequestId = @ReqId";
+
+                                SqlCommand cmd4 = new SqlCommand(
+                                    rejectReq,
+                                    con,
+                                    trans
+                                );
+
+                                cmd4.Parameters.AddWithValue(
+                                    "@ReqId",
+                                    requestId
+                                );
+
+                                cmd4.ExecuteNonQuery();
                             }
                         }
-                        else if (status == 3) // حالة الرفض
-                        {
-                            // لو رفض، بنقفل الطلب كله
-                            string rejectReq = "UPDATE HR_Requests SET Status = 2 WHERE RequestId = @ReqId";
-                            new SqlCommand(rejectReq, con, trans).Parameters.AddWithValue("@ReqId", requestId);
-                        }
 
+                        // =========================
+                        // COMMIT
+                        // =========================
                         trans.Commit();
-                        return Json(new { success = true });
+
+                        return Json(new
+                        {
+                            success = true,
+                            count = model.ApprovalIds.Count,
+                            message = "تم تنفيذ العملية بنجاح"
+                        });
                     }
                     catch (Exception ex)
                     {
                         trans.Rollback();
-                        return Json(new { success = false, message = ex.Message });
+
+                        return Json(new
+                        {
+                            success = false,
+                            message = ex.Message
+                        });
                     }
                 }
             }
@@ -2084,23 +2289,11 @@ WHERE e.IsActive = 1;";
     Re.ToDate,
     Re.CreatedDate,
 
-    CASE 
-        WHEN EXISTS (
-            SELECT 1 
-            FROM HR_RequestApprovals a 
-            WHERE a.RequestId = Re.RequestId 
-              AND a.Status = 3
-        ) THEN N'مرفوض'
-        
-        WHEN NOT EXISTS (
-            SELECT 1 
-            FROM HR_RequestApprovals a 
-            WHERE a.RequestId = Re.RequestId 
-              AND a.Status = 2
-        ) THEN N'مقبول'
-        
-        ELSE N'قيد الانتظار'
-    END AS StatusName
+   CASE when App.Status=1 then N'قيد الانتظار'
+    when App.Status=2 then N'مقبول'
+	 when App.Status=3 then N'مرفوض'
+	 else 'غير معروف '
+END AS StatusName
 
 FROM HR_RequestApprovals App
 
@@ -2146,6 +2339,138 @@ WHERE Em.EmployeeCode = @code
 
             return View(list);
         }
+        public async Task<IActionResult> AllRequests()
+        {
+            var branches = new List<SelectListItem>();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string q = "SELECT distinct UserName from StoreUser";
+                SqlCommand cmd = new SqlCommand(q, con);
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    branches.Add(new SelectListItem
+                    {
+                        Value = dr["UserName"].ToString(),
+                        Text = dr["UserName"].ToString()
+                    });
+                }
+            }
+
+            ViewBag.Branches = branches;
+            return View();
+        }
+            [HttpPost]
+        public IActionResult AllRequests(string startDate, string endDate, string Branch, bool All, bool No, bool Yes, bool Wait)
+        {
+            var userCode = ViewBag.UserName;
+            var branches = new List<SelectListItem>();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string q = "SELECT distinct UserName from StoreUser";
+                SqlCommand cmd = new SqlCommand(q, con);
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    branches.Add(new SelectListItem
+                    {
+                        Value = dr["UserName"].ToString(),
+                        Text = dr["UserName"].ToString()
+                    });
+                }
+            }
+
+            ViewBag.Branches = branches;
+            List<RequestDetailsVM> list = new List<RequestDetailsVM>();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                string sql = @"
+        SELECT  
+    Em.EmployeeName AS Employee,
+    Mang.EmployeeName AS Manager,
+    Ro.RoleName,
+    Em.EmployeeId,
+    Re.RequestTypeId,
+    App.ApproverId,
+    Re.RequestId,
+    App.Status,
+
+    rt.Name AS RequestType,
+    Re.FromDate,
+    Re.ToDate,
+    Re.CreatedDate,
+
+   CASE when App.Status=1 then N'قيد الانتظار'
+    when App.Status=2 then N'مقبول'
+	 when App.Status=3 then N'مرفوض'
+	 else 'غير معروف '
+END AS StatusName
+
+FROM HR_RequestApprovals App
+
+INNER JOIN HR_Requests Re 
+    ON App.RequestId = Re.RequestId
+
+INNER JOIN HR_Employees Em 
+    ON Re.EmployeeId = Em.EmployeeId
+
+INNER JOIN HR_Employees Mang 
+    ON App.ApproverId = Mang.EmployeeId
+
+INNER JOIN HR_Roles Ro 
+    ON Ro.RoleId = Em.RoleId
+
+INNER JOIN HR_RequestTypes rt 
+    ON Re.RequestTypeId = rt.RequestTypeId 
+where 1=1 
+";
+if (Wait)
+                {
+                    sql += " and app.Status = 1 ";
+                }
+                if (Yes)
+                {
+                    sql += " and app.Status = 2 ";
+                }
+
+                if (No)
+                {
+                    sql += " and app.Status = 3 ";
+                }
+                SqlCommand cmd = new SqlCommand(sql, con);
+                cmd.Parameters.AddWithValue("@code", userCode);
+
+                con.Open();
+                var dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    list.Add(new RequestDetailsVM
+                    {
+                        Employee = dr["Employee"].ToString(),
+                        RequestType = dr["RequestType"].ToString(),
+                        Manager = dr["Manager"].ToString(),
+                        RoleName = dr["RoleName"].ToString(),
+                        FromDate = (DateTime)dr["FromDate"],
+                        ToDate = (DateTime)dr["ToDate"],
+                        CreatedDate = (DateTime)dr["CreatedDate"],
+                        StatusName = dr["StatusName"].ToString()
+                    });
+                }
+            }
+
+            return View(list);
+        }
+
 
     }
 }

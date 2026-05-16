@@ -1,176 +1,257 @@
 ﻿/* =========================
-   FILTER CARD (CLEAN)
+   PAGE HEADER
 ========================= */
-.filter-card {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 14px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    border-top: 4px solid #ff3b3b;
-    margin-bottom: 30px;
+.page-header h4 {
+    color: #1f2937;
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 6px;
 }
 
-    .filter-card .col {
-        background: #fafafa;
-        padding: 10px;
-        border-radius: 8px;
-    }
-
-    .filter-card .form-control {
-        height: 45px;
-        font-size: 14px;
-    }
-
-    .filter-card .filter-label {
-        font-weight: bold;
-        font-size: 14px;
-        margin-bottom: 6px;
-        color: #444;
-        display: block;
-    }
-
-.filter-input {
-    width: 100%;
-    padding: 6px 12px;
+.page-header p,
+.page-header .text-muted {
+    color: #6b7280 !important;
     font-size: 14px;
-    border-radius: 6px;
-    border: 1px solid #ced4da;
 }
 
 /* =========================
-   FORM LAYOUT
+   REPORT CONTAINER
 ========================= */
-.filter-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: flex-end;
+.report-container {
+    background: #fff;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.08);
+    overflow: hidden;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
+/* =========================
+   FILTER BUTTONS
+========================= */
+.filter-btn {
+    border-radius: 12px !important;
+    padding: 10px 18px !important;
+    font-weight: 600;
+    transition: all .25s ease;
+    min-height: 44px;
 }
 
-    .form-group .btn {
-        margin: auto;
-        padding: 10px;
+    .filter-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .filter-btn.active {
+        box-shadow: 0 0 0 3px rgba(13,110,253,.15);
+        transform: translateY(-1px);
     }
 
 /* =========================
-   BOOTSTRAP OVERRIDES (LIMITED)
+   BULK ACTIONS
 ========================= */
-.form-control {
-    background: #111827;
-    border: 1px solid #374151;
-    color: #fff;
-    border-radius: 8px;
-    padding: 10px;
-    min-width: 180px;
+.action-main-btn {
+    min-height: 46px;
+    padding: 10px 20px !important;
+    border-radius: 12px !important;
+    font-weight: 600;
+    transition: .25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
-    .form-control:focus {
-        border-color: #ff3b3b;
-        outline: none;
+    .action-main-btn:hover {
+        transform: translateY(-2px);
     }
 
 /* =========================
-   BUTTONS (CLEAN SINGLE STYLE)
+   TABLE STYLE
 ========================= */
-.btn-primary {
-    background: #ff3b3b;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: bold;
+.table-modern {
     width: 100%;
-    transition: 0.3s;
+    border-collapse: collapse;
+    min-width: 900px;
 }
 
-    .btn-primary:hover {
-        background: #e62e2e;
-    }
-
-.btn-success {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    border: none;
-    padding: 10px 40px;
-    font-size: 16px;
-    border-radius: 8px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    transition: 0.3s;
-}
-
-    .btn-success:hover {
-        transform: scale(1.03);
-    }
-
-/* =========================
-   TABLE HELPERS
-========================= */
-.section-header {
-    font-weight: bold;
-    font-size: 15px;
-    text-align: right;
-    padding: 8px;
-}
-
-.section-even {
-    background: #ecf0f1;
-}
-
-.section-odd {
-    background: #dfe6e9;
-}
-
-/* =========================
-   INPUT FIX
-========================= */
-.input-group {
-    width: 110px !important;
-}
-
-/* =========================
-   RESPONSIVE (ONE SYSTEM ONLY)
-========================= */
-@media (max-width: 768px) {
-
-    .filter-card .row > div {
-        width: 100%;
-    }
-
-    .filter-card .filter-label {
-        width: 100%;
-        margin-bottom: 6px;
-    }
-
-    .filter-form {
-        direction: rtl;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .form-group {
-        width: 100%;
-    }
-
-    .btn-primary,
-    .btn-success {
-        width: 100%;
-        font-size: 15px;
-    }
-
-    .mobile-card td:first-child {
-        font-size: 16px;
-        font-weight: bold;
+    .table-modern thead {
+        background: linear-gradient(135deg,#0d6efd,#0b5ed7);
         color: #fff;
     }
-    .select2-container {
-        width: 100% !important;
+
+        .table-modern thead th {
+            padding: 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            white-space: nowrap;
+        }
+
+    .table-modern tbody tr {
+        border-bottom: 1px solid #f1f1f1;
+        transition: .2s;
     }
+
+        .table-modern tbody tr:hover {
+            background: #f8fbff;
+        }
+
+    .table-modern tbody td {
+        padding: 16px;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 14px;
+    }
+
+/* =========================
+   BADGES
+========================= */
+.badge {
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
 }
-.select2-container--default .select2-selection.is-invalid {
-    border: 1px solid red !important;
-    border-radius: 4px !important;
+
+/* =========================
+   TABLE ACTION BUTTONS
+========================= */
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: .2s;
+}
+
+    .action-btn:hover {
+        transform: scale(1.05);
+    }
+
+/* =========================
+   CHECKBOX
+========================= */
+.row-check,
+#selectAll {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* =========================
+   DATATABLE FIXES
+========================= */
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    padding: 8px 12px;
+    margin-right: 6px;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border-radius: 10px;
+    padding: 6px 10px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 8px !important;
+    margin: 0 2px;
+}
+
+/* =========================
+   EMPTY STATE
+========================= */
+.empty-state {
+    padding: 50px 20px;
+}
+
+    .empty-state i {
+        opacity: .5;
+    }
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 991px) {
+
+    .report-container {
+        padding: 15px;
+    }
+
+    .page-header {
+        text-align: center;
+    }
+
+    .table-modern {
+        min-width: 100%;
+        border: 0;
+    }
+
+        .table-modern thead {
+            display: none;
+        }
+
+        .table-modern tbody tr {
+            display: block;
+            background: #fff;
+            margin-bottom: 16px;
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.06);
+            border: 1px solid #f1f1f1;
+        }
+
+        .table-modern tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+            border: none;
+            padding: 12px 10px;
+            font-size: 14px;
+        }
+
+            .table-modern tbody td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #0d6efd;
+                margin-left: 12px;
+                white-space: nowrap;
+            }
+
+    .filters-wrapper .filter-btn {
+        width: 100%;
+    }
+
+    .bulk-actions .action-main-btn {
+        width: 100%;
+    }
+
+    .bulk-actions .d-flex {
+        width: 100%;
+    }
+
+    .action-btn {
+        width: 42px;
+        height: 42px;
+    }
+
+    .table-modern tbody td:first-child {
+        padding-top: 0;
+    }
+
+    .table-modern tbody td:last-child {
+        padding-bottom: 0;
+    }
+
+    .badge {
+        font-size: 12px;
+    }
+
+    .dataTables_filter,
+    .dataTables_length {
+        text-align: center !important;
+        margin-bottom: 10px;
+    }
 }

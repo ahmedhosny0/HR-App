@@ -105,6 +105,23 @@
                                        name="Employees[0].InsuranceStartDate"
                                        class="form-control" />
                             </div>
+                            <div class="col-md-4 ">
+
+                                <label class="form-label fw-bold">
+                                    نظام الإجازات الأسبوعية
+                                </label>
+
+                                <select name="Employees[0].WeeklyOffGroupId"
+                                        class="form-select"
+                                        asp-items="ViewBag.WeeklyOffGroups">
+
+                                    <option value="">
+                                        -- اختر نظام الإجازات --
+                                    </option>
+
+                                </select>
+
+                            </div>
                             <div class="col-md-4">
                                 <label>رصيد الإجازة السنوي</label>
                                 <input type="number" name="Employees[0].AnnualLeaveBalance" class="form-control" />
