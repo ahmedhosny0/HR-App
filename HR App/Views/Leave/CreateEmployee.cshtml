@@ -112,8 +112,8 @@
                                 </label>
 
                                 <select name="Employees[0].WeeklyOffGroupId"
-                                        class="form-select"
-                                        asp-items="ViewBag.WeeklyOffGroups">
+                                        class="form-select weeklyOff-select"
+                                        asp-items="ViewBag.WeeklyOffGroups" >
 
                                     <option value="">
                                         -- اختر نظام الإجازات --
@@ -355,9 +355,15 @@
             let name = row.find('.employee-name').val()?.trim();
             let hireDate = row.find('.hire-date').val();
                 let role = row.find('.role-select').val();
+                let weeklyOff = row.find('.weeklyOff-select').val();
 
     // remove old error
     row.find('.role-select')
+        .next('.select2')
+        .find('.select2-selection')
+        .removeClass('is-invalid');
+        // remove old error
+    row.find('.weeklyOff-select')
         .next('.select2')
         .find('.select2-selection')
         .removeClass('is-invalid');
@@ -367,6 +373,15 @@
         isValid = false;
 
         let select2Container = row.find('.role-select').next('.select2');
+
+        select2Container.find('.select2-selection')
+            .addClass('is-invalid');
+    }
+    // validation
+    if (!weeklyOff) {
+        isValid = false;
+
+        let select2Container = row.find('.weeklyOff-select').next('.select2');
 
         select2Container.find('.select2-selection')
             .addClass('is-invalid');
@@ -447,6 +462,14 @@
                 isValid = false;
 
                 row.find('.role-select')
+                    .addClass('is-invalid');
+            }
+            // Role
+            if (!weeklyOff) {
+
+                isValid = false;
+
+                row.find('.weeklyOff-select')
                     .addClass('is-invalid');
             }
 

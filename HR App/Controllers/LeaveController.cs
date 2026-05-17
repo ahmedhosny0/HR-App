@@ -708,6 +708,7 @@ WHERE RoleId = @RoleId";
     CasualLeaveBalance,
     SickLeaveUsedDays,
     LastLeaveBalanceUpdate,
+WeeklyOffGroupId,
     CreatedDate
 )
 VALUES
@@ -724,6 +725,7 @@ VALUES
     @CasualLeaveBalance,
     @SickLeaveUsedDays,
     @LastLeaveBalanceUpdate,
+@WeeklyOffGroupId,
     GETDATE()
 ) ";
 
@@ -748,6 +750,12 @@ VALUES
                         emp.RoleId == null
                             ? DBNull.Value
                             : (object)emp.RoleId
+                    );
+                    cmd.Parameters.AddWithValue(
+                        "@WeeklyOffGroupId",
+                        emp.WeeklyOffGroupId == null
+                            ? DBNull.Value
+                            : (object)emp.WeeklyOffGroupId
                     );
 
                     cmd.Parameters.AddWithValue(
@@ -851,28 +859,28 @@ ON Emp.RoleId = Role.RoleId
     : Convert.ToInt32(dr["EmployeeId"]),
                         AnnualLeaveBalance = dr["AnnualLeaveBalance"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["AnnualLeaveBalance"]),
+    : Convert.ToDecimal(dr["AnnualLeaveBalance"]),
                         AnnualLeaveUsedDays = dr["AnnualLeaveUsedDays"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["AnnualLeaveUsedDays"]),
+    : Convert.ToDecimal(dr["AnnualLeaveUsedDays"]),
                         CasualLeaveBalance = dr["CasualLeaveBalance"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["CasualLeaveBalance"]),
+    : Convert.ToDecimal(dr["CasualLeaveBalance"]),
                         CasualLeaveUsedDays = dr["CasualLeaveUsedDays"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["CasualLeaveUsedDays"]),
+    : Convert.ToDecimal(dr["CasualLeaveUsedDays"]),
                         SickLeaveBalance = dr["SickLeaveBalance"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["SickLeaveBalance"]),
+    : Convert.ToDecimal(dr["SickLeaveBalance"]),
                         SickLeaveUsedDays = dr["SickLeaveUsedDays"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["SickLeaveUsedDays"]),
+    : Convert.ToDecimal(dr["SickLeaveUsedDays"]),
                         ExamLeaveBalance = dr["ExamLeaveBalance"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["ExamLeaveBalance"]),
+    : Convert.ToDecimal(dr["ExamLeaveBalance"]),
                         ExamLeaveUsedDays = dr["ExamLeaveUsedDays"] == DBNull.Value
     ? 0
-    : Convert.ToInt32(dr["ExamLeaveUsedDays"]),
+    : Convert.ToDecimal(dr["ExamLeaveUsedDays"]),
 
                         EmployeeCode = dr["EmployeeCode"] == DBNull.Value
     ? ""
