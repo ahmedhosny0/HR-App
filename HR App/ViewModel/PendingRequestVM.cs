@@ -10,7 +10,25 @@
         public DateTime FromDate { get; set; }  // تاريخ البداية
         public DateTime ToDate { get; set; }    // تاريخ النهاية
         public int StepOrder { get; set; }      // ترتيب الخطوة (اختياري للعرض)
+        public string Notes { get; set; }
 
+        public string MedicalExam { get; set; }
+
+        public string FilePath { get; set; }
+
+        public TimeSpan? FromTime { get; set; }
+
+        public TimeSpan? ToTime { get; set; }
+
+        public string Location { get; set; }
+
+        public string Purpose { get; set; }
+
+        public string Result { get; set; }
+
+        public int? HolidayId { get; set; }
+
+        public string HolidayName { get; set; }
         // ممكن تضيف أي حقول تانية محتاجها في الشاشة
         // مثلاً لو عايز تعرض عدد الأيام
         public int TotalDays => (ToDate - FromDate).Days + 1;

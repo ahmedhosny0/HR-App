@@ -32,6 +32,8 @@
 
                 <thead>
                     <tr>
+@*                         <th>الاجراء</th>
+ *@
                         <th>الحالة</th>
                         <th>الموظف</th>
                         <th>المدير</th>
@@ -52,7 +54,24 @@
                         "bg-warning text-dark";
 
                         <tr>
+                           @*  <td>
 
+                                <a asp-action="EditRequest"
+                                   asp-route-id="@item.RequestId"
+                                   class="btn btn-warning btn-sm">
+
+                                    <i class="fas fa-edit"></i>
+
+                                </a>
+
+                                <button class="btn btn-danger btn-sm"
+                                        onclick="deleteRequest(@item.RequestId)">
+
+                                    <i class="fas fa-trash"></i>
+
+                                </button>
+
+                            </td> *@
                             <!-- STATUS -->
                             <td data-label="الحالة">
                                 <span class="badge @badgeClass px-3 py-2">
@@ -103,3 +122,49 @@
     </div>
 
 </div>
+@section Scripts
+{
+    <script>
+
+        function deleteRequest(id) {
+            Swal.fire({
+
+                title: 'تأكيد الحذف',
+                text: 'هل تريد حذف الطلب؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'حذف',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#dc3545'
+
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+                    $.ajax({
+
+                        url: '/Leave/DeleteRequest',
+                        type: 'POST',
+                        data: { id: id },
+
+                        success: function (res) {
+                            if (res.success) {
+                                Swal.fire(
+                                    'تم',
+                                    'تم حذف الطلب',
+                                    'success'
+                                ).then(() => {
+
+                                    location.reload();
+
+                                });
+                            }
+                        }
+
+                    });
+                }
+
+            });
+        }
+
+    </script>
+}

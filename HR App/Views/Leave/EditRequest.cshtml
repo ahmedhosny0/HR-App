@@ -1,0 +1,107 @@
+﻿@model HR_App.ViewModel.LeaveRequestVM
+@addTagHelper*, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@{
+    dynamic emp = ViewBag.CurrentEmployee;
+}
+
+<div class="container mt-5">
+
+    <div class="card shadow-sm border-0" style="border-radius:15px;">
+
+        <!-- Header -->
+        <div class="card-header bg-warning text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                تعديل طلب
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="post" id="requestForm">
+
+                <input type="hidden" name="RequestId" value="@Model.RequestId" />
+
+                <div class="row g-3">
+
+                    <!-- Employee -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">الموظف</label>
+
+                        <select class="form-select select2"
+                                name="EmployeeId"
+                                required>
+
+                            @foreach (var e in ViewBag.Employees as List<SelectListItem>)
+                            {
+                                <option value="@e.Value"
+                                        selected="@(e.Value == Model.EmployeeId.ToString() ? "selected" : null)">
+                                    @e.Text
+                                </option>
+                            }
+
+                        </select>
+                    </div>
+
+                    <!-- Request Type -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">نوع الطلب</label>
+
+                        <select name="RequestTypeId"
+                                class="form-select select2"
+                                required>
+
+                            @foreach (var t in ViewBag.RequestTypes as List<SelectListItem>)
+                            {
+                                <option value="@t.Value"
+                                        selected="@(t.Value == Model.RequestTypeId.ToString() ? "selected" : null)">
+                                    @t.Text
+                                </option>
+                            }
+
+                        </select>
+                    </div>
+
+                    <!-- From -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">من تاريخ</label>
+                        <input type="date"
+                               name="FromDate"
+                               class="form-control"
+                               value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" />
+                    </div>
+
+                    <!-- To -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">إلى تاريخ</label>
+                        <input type="date"
+                               name="ToDate"
+                               class="form-control"
+                               value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="col-12">
+                        <label class="form-label fw-bold">ملاحظات</label>
+                        <textarea name="Notes"
+                                  class="form-control"
+                                  rows="4">@Model.Notes</textarea>
+                    </div>
+
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button class="btn btn-success btn-lg">
+                        حفظ التعديل
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>

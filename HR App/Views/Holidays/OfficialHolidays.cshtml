@@ -1,0 +1,319 @@
+﻿@model List<HR_App.ViewModel.OfficialHolidayVM>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5" style="direction:rtl">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h3 class="fw-bold">
+
+            <i class="bi bi-calendar-event-fill text-primary me-2"></i>
+            الإجازات الرسمية
+
+        </h3>
+
+        <button class="btn btn-primary shadow-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#addModal">
+
+            <i class="bi bi-plus-circle-fill me-2"></i>
+            إضافة إجازة
+
+        </button>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="card border-0 shadow-sm"
+         style="border-radius:15px;">
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0 text-center">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>#</th>
+                            <th>اسم الإجازة</th>
+                            <th>التاريخ</th>
+                            <th>مدفوعة</th>
+                            <th>ملاحظات</th>
+                            <th>التحكم</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @if (Model.Count > 0)
+                        {
+                            int count = 1;
+
+                            foreach (var item in Model)
+                            {
+                                <tr>
+
+                                    <td>@count</td>
+
+                                    <td class="fw-bold">
+                                        @item.HolidayName
+                                    </td>
+
+                                    <td>
+                                        @item.HolidayDate.ToString("yyyy-MM-dd")
+                                    </td>
+
+                                    <td>
+
+                                        @if (item.IsPaid)
+                                        {
+                                            <span class="badge bg-success">
+                                                مدفوعة
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                غير مدفوعة
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+                                        @(string.IsNullOrWhiteSpace(item.Notes)
+                                            ? "-"
+                                            : item.Notes)
+                                    </td>
+
+                                    <td>
+
+                                        <div class="d-flex justify-content-center gap-2">
+
+                                            <a href="/Holidays/EditOfficialHoliday/@item.HolidayId"
+                                               class="btn btn-sm btn-warning">
+
+                                                <i class="bi bi-pencil-square"></i>
+
+                                            </a>
+
+                                            <a href="/Holidays/DeleteOfficialHoliday/@item.HolidayId"
+                                               class="btn btn-sm btn-danger"
+                                               onclick="return confirm('هل تريد حذف الإجازة ؟')">
+
+                                                <i class="bi bi-trash-fill"></i>
+
+                                            </a>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                                count++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+
+                                <td colspan="6" class="text-muted py-4">
+
+                                    لا توجد إجازات رسمية
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal fade"
+     id="addModal"
+     tabindex="-1">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <form method="post"
+                  action="/Holidays/AddOfficialHoliday">
+
+                <div class="modal-header bg-primary text-white">
+
+                    <h5 class="modal-title fw-bold">
+
+                        إضافة إجازة رسمية
+
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"></button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <!-- HOLIDAY NAME -->
+                    <div class="mb-3">
+
+                        <label class="form-label fw-bold">
+
+                            اسم الإجازة
+
+                        </label>
+
+                        <input type="text"
+                               name="HolidayName"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+                    <!-- HOLIDAY DATE -->
+                    <div class="mb-3">
+
+                        <label class="form-label fw-bold">
+
+                            تاريخ الإجازة
+
+                        </label>
+
+                        <input type="date"
+                               name="HolidayDate"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+                    <!-- IS PAID -->
+                    <div class="form-check mb-3">
+
+                        <input id="IsPaidAdd"
+                               type="checkbox"
+                               name="IsPaid"
+                               value="true"
+                               class="form-check-input"
+                               checked />
+
+                        <input type="hidden"
+                               name="IsPaid"
+                               value="false" />
+
+                        <label for="IsPaidAdd"
+                               class="form-check-label fw-bold">
+
+                            إجازة مدفوعة الأجر
+
+                        </label>
+
+                    </div>
+
+                    <!-- NOTES -->
+                    <div class="mb-3">
+
+                        <label class="form-label fw-bold">
+
+                            ملاحظات
+
+                        </label>
+
+                        <textarea name="Notes"
+                                  class="form-control"
+                                  rows="3"></textarea>
+
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="submit"
+                            class="btn btn-success">
+
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        حفظ
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+
+                        إغلاق
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+
+        Swal.fire({
+
+            icon: 'success',
+
+            title: 'تم بنجاح',
+
+            text: '@TempData["SuccessMessage"]',
+
+            confirmButtonText: 'حسناً'
+
+        });
+
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script>
+
+        Swal.fire({
+
+            icon: 'error',
+
+            title: 'خطأ',
+
+            html: '@Html.Raw(TempData["ErrorMessage"])',
+
+            confirmButtonText: 'حسناً'
+
+        });
+
+    </script>
+}

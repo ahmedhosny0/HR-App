@@ -66,9 +66,12 @@
                         <a href="/Leave/Employees" class="dropdown-item">الموظفين</a>
                         <a href="/Leave/AllRequests" class="dropdown-item">جميع الطلبات</a>
                     </div>
-                </div>  
+                </div>
                 <div class="nav-item ">
-                    <a href="/HR_WeeklyOffGroups/Index" id="VRMyRequests" class="nav-link">الاجازات</a>
+                    <a href="/Holidays/OfficialHolidays" id="VOfficialHolidays" class="nav-link">الاجازات السنويه</a>
+                </div>
+                <div class="nav-item ">
+                    <a href="/HR_WeeklyOffGroups/Index" id="VWeeklyOffGroups" class="nav-link">الاجازات الاسبوعيه</a>
                 </div>
                 <div class="nav-item ">
                     <a href="/Leave/PendingApprovals" id="VPendingApprovals" class="nav-link">الطلبات المعلقه</a>
@@ -135,9 +138,19 @@
     <script src="/js/lib/vfs_fonts.js"></script>
     <script src="~/js/layout.js"></script>
     <script src="/js/lib/flatpickr.js"></script>
+    <script src="/js/lib/bootstrap.bundle.min.js"></script>
+
     <!-- DATATABLE -->
     <script>
+        $('.select2').on('select2:open', function () {
 
+            setTimeout(() => {
+
+                document.querySelector('.select2-search__field').focus();
+
+            }, 0);
+
+        });
               $(document).ready(function () {
 
             $('#example').DataTable({
@@ -167,7 +180,9 @@
                 var isUsername = '@ViewBag.isUsername';
                var uuu = '@ViewBag.uuu';
         var role = '@ViewBag.Role';
-        $('#Vnav').css('display', 'flex');
+        $('#Vnav').css('display', 'flex');  
+        $('#VWeeklyOffGroups').hide();
+        $('#VOfficialHolidays').hide();
         $('#VREmployees').hide();
         $('#VPendingApprovals').show();
         $('#VCreateEmployee').hide();
@@ -188,6 +203,8 @@
             $('#VRequestTypes').show();
             $('#VEmployeeHierarchy').show();
             $('#VREmployees').show();
+            $('#VWeeklyOffGroups').show();
+            $('#VOfficialHolidays').show();
         }
               
                     if (!username || username.trim() === "") {

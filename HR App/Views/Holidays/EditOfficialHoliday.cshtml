@@ -1,0 +1,173 @@
+﻿@model HR_App.ViewModel.OfficialHolidayVM
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="/css/components.css" />
+<link rel="stylesheet" type="text/css" href="/css/report.css" />
+<link rel="stylesheet" type="text/css" href="/css/base.css" />
+<link href="/css/lib/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5" style="direction:rtl">
+
+    <div class="card shadow-sm border-0 page-card"
+         style="border-radius:15px;">
+
+        <!-- HEADER -->
+        <div class="card-header bg-primary text-white py-3">
+
+            <h5 class="mb-0 fw-bold">
+
+                <i class="bi bi-pencil-square me-2"></i>
+                تعديل الإجازة الرسمية
+
+            </h5>
+
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body p-4">
+
+            <form method="post">
+
+                <input type="hidden"
+                       name="HolidayId"
+                       value="@Model.HolidayId" />
+
+                <!-- HOLIDAY NAME -->
+                <div class="mb-4">
+
+                    <label class="form-label fw-bold mb-2">
+
+                        اسم الإجازة
+
+                    </label>
+
+                    <input type="text"
+                           name="HolidayName"
+                           value="@Model.HolidayName"
+                           class="form-control"
+                           placeholder="اكتب اسم الإجازة"
+                           required />
+
+                </div>
+
+                <!-- HOLIDAY DATE -->
+                <div class="mb-4">
+
+                    <label class="form-label fw-bold mb-2">
+
+                        تاريخ الإجازة
+
+                    </label>
+
+                    <input type="date"
+                           name="HolidayDate"
+                           value="@Model.HolidayDate.ToString("yyyy-MM-dd")"
+                           class="form-control"
+                           required />
+
+                </div>
+
+                <!-- IS PAID -->
+                <div class="form-check mb-4">
+
+                    <input id="IsPaid"
+                           type="checkbox"
+                           name="IsPaid"
+                           class="form-check-input"
+                           value="true"
+                    @(Model.IsPaid ? "checked" : "") />
+
+                    <label for="IsPaid"
+                           class="form-check-label fw-bold">
+
+                        إجازة مدفوعة الأجر
+
+                    </label>
+
+                </div>
+
+                <!-- NOTES -->
+                <div class="mb-4">
+
+                    <label class="form-label fw-bold mb-2">
+
+                        ملاحظات
+
+                    </label>
+
+                    <textarea name="Notes"
+                              class="form-control"
+                              rows="4"
+                              placeholder="اكتب ملاحظات إضافية">@Model.Notes</textarea>
+
+                </div>
+
+                <!-- BUTTONS -->
+                <div class="d-flex gap-2">
+
+                    <button type="submit"
+                            class="btn btn-success flex-fill btn-save shadow-sm">
+
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        حفظ التعديل
+
+                    </button>
+
+                    <a href="/Holidays/OfficialHolidays"
+                       class="btn btn-secondary flex-fill">
+
+                        <i class="bi bi-arrow-right-circle me-2"></i>
+                        رجوع
+
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+
+        Swal.fire({
+
+            icon: 'success',
+
+            title: 'تم بنجاح',
+
+            text: '@TempData["SuccessMessage"]',
+
+            confirmButtonText: 'حسناً'
+
+        });
+
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script>
+
+        Swal.fire({
+
+            icon: 'error',
+
+            title: 'خطأ',
+
+            html: '@Html.Raw(TempData["ErrorMessage"])',
+
+            confirmButtonText: 'حسناً'
+
+        });
+
+    </script>
+}

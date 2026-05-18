@@ -1500,17 +1500,17 @@ WHERE EmployeeId = @EmployeeId";
                         employeeName = dr["EmployeeName"].ToString(),
                         employeeCode = dr["EmployeeCode"].ToString(),
 
-                        annualBalance = Convert.ToInt32(dr["AnnualLeaveBalance"]),
-                        annualUsed = Convert.ToInt32(dr["AnnualLeaveUsedDays"]),
+                        annualBalance = Convert.ToDecimal(dr["AnnualLeaveBalance"]),
+                        annualUsed = Convert.ToDecimal(dr["AnnualLeaveUsedDays"]),
 
-                        casualBalance = Convert.ToInt32(dr["CasualLeaveBalance"]),
-                        casualUsed = Convert.ToInt32(dr["CasualLeaveUsedDays"]),
+                        casualBalance = Convert.ToDecimal(dr["CasualLeaveBalance"]),
+                        casualUsed = Convert.ToDecimal(dr["CasualLeaveUsedDays"]),
 
-                        sickBalance = Convert.ToInt32(dr["SickLeaveBalance"]),
-                        sickUsed = Convert.ToInt32(dr["SickLeaveUsedDays"]),
+                        sickBalance = Convert.ToDecimal(dr["SickLeaveBalance"]),
+                        sickUsed = Convert.ToDecimal(dr["SickLeaveUsedDays"]),
 
-                        examBalance = Convert.ToInt32(dr["ExamLeaveBalance"]),
-                        examUsed = Convert.ToInt32(dr["ExamLeaveUsedDays"])
+                        examBalance = Convert.ToDecimal(dr["ExamLeaveBalance"]),
+                        examUsed = Convert.ToDecimal(dr["ExamLeaveUsedDays"])
                     });
                 }
             }
@@ -1518,9 +1518,9 @@ WHERE EmployeeId = @EmployeeId";
             return Json(new { success = false });
         }
         private (bool IsValid, string Message) CheckLeaveBalance(
-    int employeeId,
-    int requestTypeId,
-    int requestedDays)
+            int employeeId,
+            int requestTypeId,
+            int requestedDays)
         {
             using (SqlConnection con = new SqlConnection(connStr))
             {
@@ -1558,33 +1558,189 @@ WHERE EmployeeId = @EmployeeId";
 
                     switch (requestTypeId)
                     {
+                        // =========================
+                        // اعتيادي
+                        // =========================
                         case 1:
-                            balance = Convert.ToInt32(dr["AnnualLeaveBalance"]);
-                            used = Convert.ToInt32(dr["AnnualLeaveUsedDays"]);
+
+                            balance =
+                                Convert.ToInt32(
+                                    dr["AnnualLeaveBalance"]);
+
+                            used =
+                                Convert.ToInt32(
+                                    dr["AnnualLeaveUsedDays"]);
+
                             leaveName = "الاعتيادي";
+
                             break;
 
+                        // =========================
+                        // عارضة
+                        // =========================
                         case 2:
-                            balance = Convert.ToInt32(dr["CasualLeaveBalance"]);
-                            used = Convert.ToInt32(dr["CasualLeaveUsedDays"]);
+
+                            balance =
+                                Convert.ToInt32(
+                                    dr["CasualLeaveBalance"]);
+
+                            used =
+                                Convert.ToInt32(
+                                    dr["CasualLeaveUsedDays"]);
+
                             leaveName = "العارضة";
+
+                            // =========================
+                            // CHECK MONTHLY LIMIT
+                            // =========================
+                             int currentMonthCasual = 0;
+
+                            using (SqlConnection con2 =
+                                new SqlConnection(connStr))
+                            {
+                                con2.Open();
+
+                                string casualQuery = @"
+
+DECLARE @Today DATE = GETDATE();
+
+DECLARE @StartDate DATE;
+DECLARE @EndDate DATE;
+
+IF DAY(@Today) >= 22
+BEGIN
+
+    SET @StartDate =
+        DATEFROMPARTS
+        (
+            YEAR(@Today),
+            MONTH(@Today),
+            22
+        );
+
+END
+ELSE
+BEGIN
+
+    SET @StartDate =
+        DATEFROMPARTS
+        (
+            YEAR(DATEADD(MONTH, -1, @Today)),
+            MONTH(DATEADD(MONTH, -1, @Today)),
+            22
+        );
+
+END
+
+SET @EndDate =
+    DATEADD
+    (
+        DAY,
+        -1,
+        DATEADD(MONTH, 1, @StartDate)
+    );
+
+
+
+;WITH LastApproval AS
+(
+    SELECT
+        A.RequestId,
+        A.Status,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY A.RequestId
+            ORDER BY A.StepOrder DESC
+        ) AS RN
+    FROM HR_RequestApprovals A
+)
+
+SELECT
+ISNULL
+(
+    SUM(DATEDIFF(DAY, R.FromDate, R.ToDate) + 1),
+    0
+)
+
+FROM HR_Requests R
+
+JOIN LastApproval LA
+    ON LA.RequestId = R.RequestId
+   AND LA.RN = 1
+
+WHERE R.EmployeeId = @EmployeeId
+AND R.RequestTypeId = 2
+AND LA.Status = 2
+AND R.FromDate >= @StartDate
+AND R.FromDate <= @EndDate";
+
+                                SqlCommand casualCmd =
+                                    new SqlCommand(casualQuery, con2);
+
+                                casualCmd.Parameters.AddWithValue(
+                                    "@EmployeeId",
+                                    employeeId);
+
+                                currentMonthCasual =
+                                    Convert.ToInt32(
+                                        casualCmd.ExecuteScalar());
+                            }
+
+                            // =========================
+                            // VALIDATE MONTHLY LIMIT
+                            // =========================
+                            if ((currentMonthCasual + requestedDays) > 2)
+                            {
+                                return
+                                (
+                                    false,
+                                    $"لا يمكن الحصول على أكثر من يومين عارضة خلال الفترة الحالية<br>" +
+                                    $"تم استخدام {currentMonthCasual} يوم"
+                                );
+                            }
+
                             break;
 
+                        // =========================
+                        // مرضي
+                        // =========================
                         case 3:
-                            balance = Convert.ToInt32(dr["SickLeaveBalance"]);
-                            used = Convert.ToInt32(dr["SickLeaveUsedDays"]);
+
+                            balance =
+                                Convert.ToInt32(
+                                    dr["SickLeaveBalance"]);
+
+                            used =
+                                Convert.ToInt32(
+                                    dr["SickLeaveUsedDays"]);
+
                             leaveName = "المرضي";
+
                             break;
 
+                        // =========================
+                        // امتحانات
+                        // =========================
                         case 4:
-                            balance = Convert.ToInt32(dr["ExamLeaveBalance"]);
-                            used = Convert.ToInt32(dr["ExamLeaveUsedDays"]);
+
+                            balance =
+                                Convert.ToInt32(
+                                    dr["ExamLeaveBalance"]);
+
+                            used =
+                                Convert.ToInt32(
+                                    dr["ExamLeaveUsedDays"]);
+
                             leaveName = "الامتحانات";
+
                             break;
                     }
 
                     int remaining = balance - used;
 
+                    // =========================
+                    // CHECK BALANCE
+                    // =========================
                     if (requestedDays > remaining)
                     {
                         return
@@ -1607,6 +1763,7 @@ WHERE EmployeeId = @EmployeeId";
 
             var employees = new List<SelectListItem>();
             var types = new List<SelectListItem>();
+            var holidays = new List<SelectListItem>();
 
             dynamic emp = null;
 
@@ -1712,10 +1869,25 @@ WHERE EmployeeId = @EmployeeId";
                         });
                     }
                 }
+                string q3 = " SELECT HolidayId, HolidayName FROM HR_OfficialHolidays ";
+
+                SqlCommand cmd3 = new SqlCommand(q3, con);
+                using (SqlDataReader dr3 = cmd3.ExecuteReader())
+                {
+                    while (dr3.Read())
+                    {
+                        holidays.Add(new SelectListItem
+                        {
+                            Value = dr3["HolidayId"].ToString(),
+                            Text = dr3["HolidayName"].ToString()
+                        });
+                    }
+                }
             }
 
             ViewBag.Employees = employees;
             ViewBag.RequestTypes = types;
+            ViewBag.Holidays = holidays;
 
             return View(vm);
         }
@@ -1762,6 +1934,84 @@ WHERE EmployeeId = @EmployeeId";
             }
 
             return existingDates;
+        }
+
+        private List<DateTime> RemoveWeekendsAndHolidays(
+            SqlConnection con,
+            SqlTransaction transaction,
+            int employeeId,
+            List<DateTime> dates)
+        {
+            var dateHelper = new DateHelperService();
+
+            // =========================
+            // WEEKLY OFF DAYS
+            // =========================
+
+            List<int> weeklyOffDays = new List<int>();
+
+            string weeklySql = @"
+SELECT wod.WeekDayId
+FROM HR_Employees e
+INNER JOIN HR_WeeklyOffGroups wog
+    ON e.WeeklyOffGroupId = wog.WeeklyOffGroupId
+INNER JOIN HR_WeeklyOffGroupDetails wod
+    ON wog.WeeklyOffGroupId = wod.WeeklyOffGroupId
+WHERE e.EmployeeId = @EmpId";
+
+            using (SqlCommand cmd = new SqlCommand(weeklySql, con, transaction))
+            {
+                cmd.Parameters.AddWithValue("@EmpId", employeeId);
+
+                using (SqlDataReader rdr = cmd.ExecuteReader())
+                {
+                    while (rdr.Read())
+                    {
+                        weeklyOffDays.Add(Convert.ToInt32(rdr["WeekDayId"]));
+                    }
+                } // reader اتقفل هنا صح
+            }
+
+            // =========================
+            // OFFICIAL HOLIDAYS
+            // =========================
+
+            List<DateTime> holidays = new List<DateTime>();
+
+            string holidaySql = @"
+SELECT HolidayDate
+FROM HR_OfficialHolidays ";
+
+            using (SqlCommand cmd = new SqlCommand(holidaySql, con, transaction))
+            {
+                using (SqlDataReader rdr = cmd.ExecuteReader())
+                {
+                    while (rdr.Read())
+                    {
+                        holidays.Add(Convert.ToDateTime(rdr["HolidayDate"]).Date);
+                    }
+                }
+            }
+
+            // =========================
+            // FILTER
+            // =========================
+
+            var filteredDates = dates
+                .Where(d =>
+                {
+                    int weekDayId = dateHelper.ConvertToDbWeekDay(d.DayOfWeek);
+
+                    bool isWeeklyOff = weeklyOffDays.Contains(weekDayId);
+
+                    bool isHoliday = holidays.Contains(d.Date);
+
+                    return !isWeeklyOff && !isHoliday;
+                })
+                .Distinct()
+                .ToList();
+
+            return filteredDates;
         }
         [HttpPost]
         public IActionResult CreateRequest(LeaveRequestVM model)
@@ -1829,7 +2079,24 @@ WHERE EmployeeId = @EmployeeId";
                                 .Select(d => model.FromDate.Value.AddDays(d))
                                 .ToList();
                         }
+                        // =========================
+                        // REMOVE WEEKENDS & HOLIDAYS
+                        // =========================
 
+                        dates = RemoveWeekendsAndHolidays(
+                            con,
+                            transaction,
+                            model.EmployeeId,
+                            dates
+                        );
+
+                        if (!dates.Any())
+                        {
+                            TempData["ErrorMessage"] =
+                                "كل الأيام المختارة إجازات أسبوعية أو رسمية";
+
+                            return RedirectToAction("CreateRequest");
+                        }
                         int requestedDays = dates.Count;
 
                         // =========================
@@ -1896,11 +2163,11 @@ WHERE EmployeeId = @EmployeeId";
                         string insertSql = @"
 INSERT INTO HR_Requests
 (RequestTypeId, EmployeeId, FromDate, ToDate, FromTime, ToTime,
- Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate,MedicalExam)
+ Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate,MedicalExam,HolidayId)
 OUTPUT INSERTED.RequestId
 VALUES
 (@TypeId, @EmpId, @FromDate, @ToDate, @FromTime, @ToTime,
- @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE(),@MedicalExam);";
+ @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE(),@MedicalExam,@HolidayId);";
 
                         List<string> insertedDays = new List<string>();
                         List<string> skippedDays = new List<string>();
@@ -1933,6 +2200,7 @@ VALUES
                             insertCmd.Parameters.Add("@TypeId", SqlDbType.Int).Value = model.RequestTypeId;
                             insertCmd.Parameters.Add("@MedicalExam", SqlDbType.Int).Value = model.MedicalExam;
                             insertCmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = model.EmployeeId;
+                            insertCmd.Parameters.Add("@HolidayId", SqlDbType.Int).Value = model.HolidayId;
                             insertCmd.Parameters.Add("@FromDate", SqlDbType.Date).Value = date;
                             insertCmd.Parameters.Add("@ToDate", SqlDbType.Date).Value = date;
 
@@ -2037,6 +2305,349 @@ WHERE e.IsActive = 1;";
                 }
             }
         }
+        [HttpPost]
+        public IActionResult DeleteRequest(int id)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                // =========================
+                // CHECK STATUS
+                // =========================
+                string checkSql =
+                    @"SELECT Status
+              FROM HR_Requests
+              WHERE RequestId = @Id";
+
+                SqlCommand checkCmd =
+                    new SqlCommand(checkSql, con);
+
+                checkCmd.Parameters.AddWithValue("@Id", id);
+
+                int status =
+                    Convert.ToInt32(
+                        checkCmd.ExecuteScalar());
+
+                if (status != 0)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "لا يمكن حذف الطلب بعد اعتماده"
+                    });
+                }
+                using (SqlTransaction transaction = con.BeginTransaction())
+                {
+                    try
+                    {
+                        // حذف الموافقات
+                        string deleteApprovals =
+                            @"DELETE FROM HR_RequestApprovals
+                      WHERE RequestId = @Id";
+
+                        SqlCommand cmd1 =
+                            new SqlCommand(deleteApprovals, con, transaction);
+
+                        cmd1.Parameters.AddWithValue("@Id", id);
+
+                        cmd1.ExecuteNonQuery();
+
+                        // حذف الطلب
+                        string deleteRequest =
+                            @"DELETE FROM HR_Requests
+                      WHERE RequestId = @Id";
+
+                        SqlCommand cmd2 =
+                            new SqlCommand(deleteRequest, con, transaction);
+
+                        cmd2.Parameters.AddWithValue("@Id", id);
+
+                        cmd2.ExecuteNonQuery();
+
+                        transaction.Commit();
+
+                        return Json(new
+                        {
+                            success = true
+                        });
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+
+                        return Json(new
+                        {
+                            success = false
+                        });
+                    }
+                }
+            }
+        }
+        public IActionResult EditRequest(int id)
+        {
+            LeaveRequestVM model = new LeaveRequestVM();
+            var vm = new LeaveRequestVM();
+
+            var employees = new List<SelectListItem>();
+            var types = new List<SelectListItem>();
+            var holidays = new List<SelectListItem>();
+
+            dynamic emp = null;
+
+            var userId = ViewBag.UserName;
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                // =========================
+                // Current Employee
+                // =========================
+                string qEmp = @"
+        SELECT EmployeeId, EmployeeName, EmployeeCode,
+               AnnualLeaveBalance, AnnualLeaveUsedDays,
+               CasualLeaveBalance, CasualLeaveUsedDays,
+               SickLeaveBalance, SickLeaveUsedDays,
+               ExamLeaveBalance, ExamLeaveUsedDays
+        FROM HR_Employees
+        WHERE EmployeeCode = @id";
+
+                SqlCommand cmdEmp = new SqlCommand(qEmp, con);
+                cmdEmp.Parameters.AddWithValue("@id", userId);
+
+                using (SqlDataReader dr = cmdEmp.ExecuteReader())
+                {
+                    if (dr.Read())
+                    {
+                        emp = new
+                        {
+                            EmployeeId = dr["EmployeeId"],
+                            EmployeeName = dr["EmployeeName"],
+                            EmployeeCode = dr["EmployeeCode"],
+                            AnnualBalance = dr["AnnualLeaveBalance"],
+                            AnnualUsed = dr["AnnualLeaveUsedDays"],
+                            CasualBalance = dr["CasualLeaveBalance"],
+                            CasualUsed = dr["CasualLeaveUsedDays"],
+                            SickBalance = dr["SickLeaveBalance"],
+                            SickUsed = dr["SickLeaveUsedDays"],
+                            ExamBalance = dr["ExamLeaveBalance"],
+                            ExamUsed = dr["ExamLeaveUsedDays"]
+                        };
+                        ViewBag.CurrentEmployeeId = dr["EmployeeId"];
+
+                    }
+
+                }
+
+                ViewBag.CurrentEmployee = emp;
+
+                // =========================
+                // Employees
+                // =========================
+                var role = ViewBag.Role;
+
+                string q1 = "";
+
+                if (role == "HeadOfficeHR")
+                {
+                    // HR يشوف كل الموظفين
+                    q1 = "SELECT EmployeeId, EmployeeName FROM HR_Employees WHERE IsActive = 1";
+                }
+                else
+                {
+                    // أي حد غير HR يشوف نفسه بس
+                    q1 = @"SELECT EmployeeId, EmployeeName 
+           FROM HR_Employees 
+           WHERE EmployeeCode = @userId AND IsActive = 1";
+                }
+
+                SqlCommand cmd1 = new SqlCommand(q1, con);
+
+                if (role != "HeadOfficeHR")
+                {
+                    cmd1.Parameters.AddWithValue("@userId", userId);
+                }
+
+                using (SqlDataReader dr1 = cmd1.ExecuteReader())
+                {
+                    while (dr1.Read())
+                    {
+                        employees.Add(new SelectListItem
+                        {
+                            Value = dr1["EmployeeId"].ToString(),
+                            Text = dr1["EmployeeName"].ToString()
+                        });
+                    }
+                }
+                // =========================
+                // Request Types
+                // =========================
+                string q2 = "SELECT RequestTypeId, Name FROM HR_RequestTypes";
+
+                SqlCommand cmd2 = new SqlCommand(q2, con);
+                using (SqlDataReader dr2 = cmd2.ExecuteReader())
+                {
+                    while (dr2.Read())
+                    {
+                        types.Add(new SelectListItem
+                        {
+                            Value = dr2["RequestTypeId"].ToString(),
+                            Text = dr2["Name"].ToString()
+                        });
+                    }
+                }
+                string q3 = " SELECT HolidayId, HolidayName FROM HR_OfficialHolidays ";
+
+                SqlCommand cmd3 = new SqlCommand(q3, con);
+                using (SqlDataReader dr3 = cmd3.ExecuteReader())
+                {
+                    while (dr3.Read())
+                    {
+                        holidays.Add(new SelectListItem
+                        {
+                            Value = dr3["HolidayId"].ToString(),
+                            Text = dr3["HolidayName"].ToString()
+                        });
+                    }
+                }
+            }
+
+            ViewBag.Employees = employees;
+            ViewBag.RequestTypes = types;
+            ViewBag.Holidays = holidays;
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+                
+
+                string sql = @"
+SELECT *
+FROM HR_Requests
+WHERE RequestId = @Id";
+
+                SqlCommand cmd = new SqlCommand(sql, con);
+
+                cmd.Parameters.AddWithValue("@Id", id);
+
+
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    model.RequestId =
+                        Convert.ToInt32(dr["RequestId"]);
+
+                    model.EmployeeId =
+                        Convert.ToInt32(dr["EmployeeId"]);
+
+                    model.RequestTypeId =
+                        Convert.ToInt32(dr["RequestTypeId"]);
+
+                    model.FromDate =
+                        Convert.ToDateTime(dr["FromDate"]);
+
+                    model.ToDate =
+                        Convert.ToDateTime(dr["ToDate"]);
+
+                    model.Notes =
+                        dr["Notes"]?.ToString();
+
+                    model.Location =
+                        dr["Location"]?.ToString();
+
+                    model.Purpose =
+                        dr["Purpose"]?.ToString();
+                }
+            }
+
+            return View(model);
+        }
+        [HttpPost]
+        public IActionResult EditRequest(LeaveRequestVM model)
+        {
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+                // =========================
+                // CHECK STATUS
+                // =========================
+                string checkSql =
+                    @"SELECT Status
+              FROM HR_Requests
+              WHERE RequestId = @Id";
+
+                SqlCommand checkCmd =
+                    new SqlCommand(checkSql, con);
+
+                checkCmd.Parameters.AddWithValue(
+                    "@Id",
+                    model.RequestId);
+
+                int status =
+                    Convert.ToInt32(
+                        checkCmd.ExecuteScalar());
+
+                // لو ليس Pending
+                if (status != 0)
+                {
+                    TempData["ErrorMessage"] =
+                        "لا يمكن تعديل الطلب بعد اعتماده";
+
+                    return RedirectToAction("MyRequests");
+                }
+                string sql = @"
+
+UPDATE HR_Requests
+SET
+
+    RequestTypeId = @RequestTypeId,
+    FromDate = @FromDate,
+    ToDate = @ToDate,
+    Notes = @Notes,
+    Location = @Location,
+    Purpose = @Purpose
+
+WHERE RequestId = @RequestId";
+
+                SqlCommand cmd = new SqlCommand(sql, con);
+
+                cmd.Parameters.AddWithValue(
+                    "@RequestId",
+                    model.RequestId);
+
+                cmd.Parameters.AddWithValue(
+                    "@RequestTypeId",
+                    model.RequestTypeId);
+
+                cmd.Parameters.AddWithValue(
+                    "@FromDate",
+                    model.FromDate);
+
+                cmd.Parameters.AddWithValue(
+                    "@ToDate",
+                    model.ToDate);
+
+                cmd.Parameters.AddWithValue(
+                    "@Notes",
+                    (object?)model.Notes ?? DBNull.Value);
+
+                cmd.Parameters.AddWithValue(
+                    "@Location",
+                    (object?)model.Location ?? DBNull.Value);
+
+                cmd.Parameters.AddWithValue(
+                    "@Purpose",
+                    (object?)model.Purpose ?? DBNull.Value);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            TempData["SuccessMessage"] =
+                "تم تعديل الطلب بنجاح";
+
+            return RedirectToAction("MyRequests");
+        }
         public IActionResult PendingApprovals()
         {
             // نفترض إن ده الـ ID بتاع المدير اللي فاتح الشاشة حالياً
@@ -2048,14 +2659,52 @@ WHERE e.IsActive = 1;";
             {
                 // Query بتجيب بيانات الطلب + بيانات الموظف اللي قدمه من جدول الـ Approvals
                 string sql = @"
-             SELECT a.ApproverId ,a.ApprovalId, a.RequestId, r.EmployeeId, e.EmployeeName, 
-        rt.Name TypeName, r.FromDate, r.ToDate, a.StepOrder,r.RequestTypeId
- FROM HR_RequestApprovals a
- JOIN HR_Requests r ON a.RequestId = r.RequestId
- JOIN HR_Employees e ON r.EmployeeId = e.EmployeeId
- JOIN HR_Employees App ON App.EmployeeId = a.ApproverId
- JOIN HR_RequestTypes rt ON r.RequestTypeId = rt.RequestTypeId
- WHERE App.EmployeeCode = @ManagerId AND a.Status = 1 "; // 1 يعني Pending
+SELECT
+    a.ApprovalId,
+    a.RequestId,
+
+    r.EmployeeId,
+    r.RequestTypeId,
+    r.FromDate,
+    r.ToDate,
+    r.Notes,
+
+    r.MedicalExam,
+    r.FilePath,
+
+    r.FromTime,
+    r.ToTime,
+    r.Location,
+    r.Purpose,
+    r.Result,
+
+    r.HolidayId,
+
+    e.EmployeeName,
+
+    rt.Name AS TypeName,
+
+    h.HolidayName
+
+FROM HR_RequestApprovals a
+
+JOIN HR_Requests r
+ON a.RequestId = r.RequestId
+
+JOIN HR_Employees e
+ON r.EmployeeId = e.EmployeeId
+
+JOIN HR_Employees App
+ON App.EmployeeId = a.ApproverId
+
+JOIN HR_RequestTypes rt
+ON r.RequestTypeId = rt.RequestTypeId
+
+LEFT JOIN HR_OfficialHolidays h
+ON r.HolidayId = h.HolidayId
+
+WHERE App.EmployeeCode = @ManagerId
+AND a.Status = 1  "; // 1 يعني Pending
 
                 SqlCommand cmd = new SqlCommand(sql, con);
                 cmd.Parameters.AddWithValue("@ManagerId", currentManagerId);
@@ -2071,6 +2720,27 @@ WHERE e.IsActive = 1;";
                         RequestTypeId = (int)rdr["RequestTypeId"],
                         RequestType = rdr["TypeName"].ToString(),
                         FromDate = (DateTime)rdr["FromDate"],
+                        Notes = rdr["Notes"]?.ToString(),
+
+                        MedicalExam = rdr["MedicalExam"]?.ToString(),
+
+                        FilePath = rdr["FilePath"]?.ToString(),
+
+                        Location = rdr["Location"]?.ToString(),
+
+                        Purpose = rdr["Purpose"]?.ToString(),
+
+                        Result = rdr["Result"]?.ToString(),
+
+                        HolidayName = rdr["HolidayName"]?.ToString(),
+
+                        FromTime = rdr["FromTime"] == DBNull.Value
+    ? null
+    : (TimeSpan?)rdr["FromTime"],
+
+                        ToTime = rdr["ToTime"] == DBNull.Value
+    ? null
+    : (TimeSpan?)rdr["ToTime"],
                         ToDate = (DateTime)rdr["ToDate"]
                     });
                 }
@@ -2333,6 +3003,7 @@ WHERE Em.EmployeeCode = @code
                 {
                     list.Add(new RequestDetailsVM
                     {
+                        RequestId = Convert.ToInt32(dr["RequestId"]),
                         Employee = dr["Employee"].ToString(),
                         RequestType = dr["RequestType"].ToString(),
                         Manager = dr["Manager"].ToString(),

@@ -123,10 +123,10 @@
                 <thead>
 
                     <tr>
-
                         <th>
                             <input type="checkbox" id="selectAll" />
                         </th>
+                        <th></th>
 
                         <th>
                             الإجراءات
@@ -178,7 +178,7 @@
                             };
 
                             <tr data-type="@item.RequestTypeId">
-
+                               
                                 <!-- CHECKBOX -->
                                 <td data-label="تحديد">
 
@@ -187,7 +187,15 @@
                                            data-app="@item.ApprovalId" />
 
                                 </td>
+                                <td>
+                                    <button class="btn btn-info btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#detailsModal-@item.RequestId">
 
+                                        <i class="fas fa-eye"></i>
+
+                                    </button>
+                                </td>
                                 <!-- ACTIONS -->
                                 <td data-label="الإجراءات">
 
@@ -246,6 +254,139 @@
                                 </td>
 
                             </tr>
+                            <div class="modal fade"
+                                 id="detailsModal-@item.RequestId"
+                                 tabindex="-1">
+
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+
+                                    <div class="modal-content">
+
+                                        <div class="modal-header bg-primary text-white">
+
+                                            <h5 class="modal-title">
+                                                تفاصيل الطلب
+                                            </h5>
+
+                                            <button type="button"
+                                                    class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal"></button>
+
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <div class="mb-3">
+
+                                                <strong>الموظف:</strong>
+                                                @item.EmployeeName
+
+                                            </div>
+
+                                            <div class="mb-3">
+
+                                                <strong>نوع الطلب:</strong>
+                                                @item.RequestType
+
+                                            </div>
+
+                                            @if (item.RequestTypeId == 3)
+                                            {
+                                                <div class="alert alert-danger">
+
+                                                    <strong>جهة الكشف الطبي:</strong>
+                                                    @item.MedicalExam
+
+                                                </div>
+                                            }
+
+                                            @if (item.RequestTypeId == 4)
+                                            {
+                                                <div class="mb-3">
+
+                                                    <strong>ملف جدول الامتحانات:</strong>
+
+                                                    <br />
+
+                                                    <a href="@item.FilePath"
+                                                       target="_blank"
+                                                       class="btn btn-success mt-2">
+
+                                                        عرض الملف
+
+                                                    </a>
+
+                                                </div>
+                                            }
+
+                                            @if (item.RequestTypeId == 5 ||
+                                           item.RequestTypeId == 6)
+                                            {
+                                                <div class="row">
+
+                                                    <div class="col-md-6 mb-3">
+
+                                                        <strong>من وقت:</strong>
+                                                        @item.FromTime
+
+                                                    </div>
+
+                                                    <div class="col-md-6 mb-3">
+
+                                                        <strong>إلى وقت:</strong>
+                                                        @item.ToTime
+
+                                                    </div>
+
+                                                    <div class="col-md-6 mb-3">
+
+                                                        <strong>المكان:</strong>
+                                                        @item.Location
+
+                                                    </div>
+
+                                                    <div class="col-md-6 mb-3">
+
+                                                        <strong>الغرض:</strong>
+                                                        @item.Purpose
+
+                                                    </div>
+
+                                                </div>
+                                            }
+
+                                            @if (item.RequestTypeId == 7)
+                                            {
+                                                <div class="alert alert-secondary">
+
+                                                    <strong>الإجازة الرسمية:</strong>
+                                                    @item.HolidayName
+
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                            {
+                                                <div class="mt-3">
+
+                                                    <strong>ملاحظات:</strong>
+
+                                                    <div class="border rounded p-3 mt-2 bg-light">
+
+                                                        @item.Notes
+
+                                                    </div>
+
+                                                </div>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
                         }
                     }
                    
@@ -336,16 +477,33 @@
             // =========================
             // SELECT ALL
             // =========================
+            // =========================
+            // SELECT ALL
+            // =========================
             $('#selectAll').on('change', function () {
 
                 let checked = $(this).is(':checked');
 
-                // لو uncheck فضي الليست مرة واحدة
+                // الصفوف الظاهرة فقط بعد الفلترة
+                let visibleChecks = table
+                    .rows({ search: 'applied' })
+                    .nodes()
+                    .to$()
+                    .find('.row-check');
+
                 if (!checked) {
-                    selectedIds = [];
+
+                    visibleChecks.each(function () {
+
+                        let id = parseInt($(this).data('app'));
+
+                        selectedIds = selectedIds.filter(x => x !== id);
+
+                    });
+
                 }
 
-                table.$('.row-check').each(function () {
+                visibleChecks.each(function () {
 
                     let id = parseInt($(this).data('app'));
 
@@ -364,7 +522,6 @@
                 console.log("selectedIds:", selectedIds);
 
             });
-
             // =========================
             // KEEP CHECKBOX STATE AFTER DRAW
             // =========================
@@ -397,11 +554,16 @@
 
                 if (all) {
 
-                    selected = table.$('.row-check').map(function () {
+                    selected = table
+                        .rows({ search: 'applied' })
+                        .nodes()
+                        .to$()
+                        .find('.row-check')
+                        .map(function () {
 
-                        return parseInt($(this).data('app'));
+                            return parseInt($(this).data('app'));
 
-                    }).get();
+                        }).get();
 
                 } else {
 

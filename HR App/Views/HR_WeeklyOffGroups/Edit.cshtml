@@ -1,7 +1,7 @@
 ﻿@model HR_App.ViewModel.WeeklyOffGroupVM
 
 @{
-    ViewData["Title"] = "Create Weekly Off Group";
+    ViewData["Title"] = "Edit Weekly Off Group";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
     var days = ViewBag.Days as List<HR_App.ViewModel.WeekDayVM>;
@@ -13,42 +13,28 @@
 
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">
-               أيام الاجازه الاسبوعيه
+               تعديل
             </h4>
         </div>
 
         <div class="card-body">
 
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger">
-                    @Html.Raw(TempData["Error"])
-                </div>
-            }
+            <form asp-action="Edit" method="post">
 
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success">
-                    @Html.Raw(TempData["Success"])
-                </div>
-            }
-
-            <form asp-action="Create" method="post">
+                <!-- Hidden ID -->
+                <input type="hidden" asp-for="WeeklyOffGroupId" />
 
                 <div class="row">
 
                     <!-- Group Name -->
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">
-                            المجموعه
-                        </label>
+                        <label class="form-label fw-bold">Group Name</label>
 
                         <input asp-for="GroupName"
                                class="form-control"
                                placeholder="مثال : جمعة وسبت" />
 
-                        <span asp-validation-for="GroupName"
-                              class="text-danger"></span>
+                        <span asp-validation-for="GroupName" class="text-danger"></span>
                     </div>
 
                     <!-- Is Active -->
@@ -56,11 +42,10 @@
 
                         <div class="form-check mt-4">
 
-                            <input asp-for="IsActive"
-                                   class="form-check-input" />
+                            <input asp-for="IsActive" class="form-check-input" />
 
                             <label class="form-check-label">
-                                نشط
+                                Active
                             </label>
 
                         </div>
@@ -75,7 +60,7 @@
                 <div class="mb-3">
 
                     <label class="form-label fw-bold mb-3">
-                        أيام الاسبوع
+                        Weekly Off Days
                     </label>
 
                     <div class="row">
@@ -91,8 +76,7 @@
                                            name="SelectedDays"
                                            value="@item.WeekDayId"
                                            id="day_@item.WeekDayId"
-
-                                    @(Model.SelectedDays.Contains(item.WeekDayId)
+                                    @(Model.SelectedDays != null && Model.SelectedDays.Contains(item.WeekDayId)
                                         ? "checked"
                                         : "") />
 
@@ -117,19 +101,13 @@
                 <!-- Buttons -->
                 <div class="d-flex gap-2">
 
-                    <button type="submit"
-                            class="btn btn-success">
-
+                    <button type="submit" class="btn btn-success">
                         <i class="fa fa-save"></i>
-                        حفظ
-
+                        تعديل
                     </button>
 
-                    <a asp-action="Index"
-                       class="btn btn-secondary">
-
+                    <a asp-action="Index" class="btn btn-secondary">
                         رجوع
-
                     </a>
 
                 </div>

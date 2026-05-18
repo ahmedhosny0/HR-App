@@ -267,15 +267,37 @@
                         <div id="selectedDaysPreview" class="mt-2 d-flex flex-wrap gap-2"></div>
 
                     </div>
+
+                    <!-- Request Type -->
+                    <div class="col-md-6 d-none" id="holiday">
+                        <label class="form-label fw-bold">
+                            الاجازه الرسميه
+                        </label>
+
+                        <select name="HolidayId"
+                                class="form-select select2" >
+
+                            <option value="">
+                                اختر 
+                            </option>
+
+                            @foreach (var t in ViewBag.Holidays as List<SelectListItem>)
+                            {
+                                <option value="@t.Value">
+                                    @t.Text
+                                </option>
+                            }
+
+                        </select>
+                    </div>
                                         <!-- Request Type -->
-                    <div class="col-md-6" id="medical">
+                    <div class="col-md-6 d-none" id="medical">
                         <label class="form-label fw-bold">
                             أين تم عمل الكشف الطبي
                         </label>
 
                         <select name="MedicalExam"
-                                class="form-select "
-                                >
+                                class="form-select ">
 
                             <option value="">
                                 اختر 
@@ -381,8 +403,9 @@
         // =========================
         // INIT HIDDEN FIELDS
         // =========================
+        $('#holiday').addClass('d-none');
+        $('#medical').addClass('d-none');
         $('#missionFields').hide();
-        $('#medical').hide();
         $('#fileDiv').hide();
         $('#multipleDaysSection').hide();
 
@@ -392,12 +415,12 @@
         flatpickr("#SelectedDays", {
             mode: "multiple",
             dateFormat: "Y-m-d",
-            minDate: "today",
 
             onChange: function (selectedDates) {
 
                 let container = document.getElementById("selectedDaysPreview");
                 container.innerHTML = "";
+
                 selectedDates.forEach(d => {
 
                     let date = flatpickr.formatDate(d, "Y-m-d");
@@ -409,10 +432,9 @@
 
                     container.appendChild(tag);
                 });
-                
+
             }
         });
-
         // =========================
         // MULTIPLE DAYS TOGGLE
         // =========================
@@ -455,33 +477,21 @@
 
             // RESET
             $('#missionFields').hide();
-            $('#medical').hide();
+            $('#holiday').addClass('d-none');
+            $('#medical').addClass('d-none');
             $('#fileDiv').hide();
                             $('#fromDateDiv').show();
                 $('#toDateDiv').show();
                 $('#multipleDaysDiv').show();
                 $('#notesDiv').show();
-            // =========================
-            // SIMPLE LEAVES
-            // =========================
-            // if (SIMPLE_TYPES.includes(typeId)) {
 
-            //     $('#missionFields').hide();
-            //     $('#fileDiv').hide();
-
-            //     $('#fromDateDiv').show();
-            //     $('#toDateDiv').show();
-            //     $('#multipleDaysDiv').show();
-            //     $('#notesDiv').show();
-            // }
-
-            // // =========================
-            // // EXAM
-            // // =========================
-            // else 
-           if (typeId == '3') {
-
-                $('#medical').show();
+            if (typeId == '7') {
+                $('#holiday').removeClass('d-none');
+                $('select[name="HolidayId"]').select2({
+                    width: '100%'
+                });
+            } else if (typeId == '3') {
+                $('#medical').removeClass('d-none');
             }
              else if (typeId == '4') {
 
@@ -489,6 +499,7 @@
 
                 $('#fileDiv').show();
             }
+
 
             // =========================
             // MISSIONS
@@ -527,6 +538,7 @@
 
             let typeId = $('select[name="RequestTypeId"]').val();
             let medical = $('select[name="MedicalExam"]').val();
+            let holiday = $('select[name="HolidayId"]').val();
 
             let isMultiple = $('#isMultipleDays').is(':checked');
 
@@ -620,6 +632,21 @@
                         icon: 'error',
                         title: 'خطأ',
                         text: 'يجب إدخال جهة الكشف الطبي'
+                    });
+
+                    return;
+                }
+            }
+            if (typeId == '7') {
+
+                if (!holiday) {
+
+                    e.preventDefault();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'يجب إدخال الاجازه الرسميه'
                     });
 
                     return;

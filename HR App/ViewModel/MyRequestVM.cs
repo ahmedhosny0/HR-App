@@ -10,7 +10,7 @@
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public DateTime CreatedDate { get; set; }
-
+        public int RequestId { get; set; }
         public string StatusName { get; set; }
     }
 }

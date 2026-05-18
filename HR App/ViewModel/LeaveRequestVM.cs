@@ -8,6 +8,7 @@ namespace HR_App.ViewModel
 
         public int RequestTypeId { get; set; }
         public int EmployeeId { get; set; }
+        public int HolidayId { get; set; }
 
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
