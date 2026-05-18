@@ -103,9 +103,16 @@ body {
     z-index: 9999;
 }
 
-.nav-item.dropdown.open .dropdown-menu,
-.nav-item.dropdown:hover .dropdown-menu {
+/* open manually */
+.nav-item.dropdown.open .dropdown-menu {
     display: block;
+}
+
+/* desktop hover only */
+@media (min-width: 769px) {
+    .nav-item.dropdown:hover .dropdown-menu {
+        display: block;
+    }
 }
 
 /* DESKTOP HOVER */
