@@ -1,4 +1,6 @@
 ﻿using HR_App.Models.TopSoft;
+using HR_App.Services;
+
 //using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
@@ -30,6 +32,7 @@ builder.Services.AddDbContextFactory<TopSoftContext>(options =>
     options.UseSqlServer("Server=192.168.1.208;User ID=sa;Password=P@ssw0rd123;Database=TopSoft;Connect Timeout=7200;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;"));
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<TopSoftContext>();
+builder.Services.AddHttpClient<AiTranslationService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMvc();
 
@@ -48,6 +51,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
     });
+// في دالة ConfigureServices أو قبل الـ builder.Build()
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(20); // مدة بقاء الشات في الذاكرة
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 builder.Services.Configure<FormOptions>(options =>
 {
     options.ValueCountLimit = int.MaxValue; // Allow unlimited form fields
@@ -70,6 +82,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 app.UseStaticFiles();
+
 
 app.UseRouting();
 

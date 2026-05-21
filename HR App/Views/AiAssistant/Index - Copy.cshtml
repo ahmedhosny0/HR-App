@@ -1,0 +1,127 @@
+﻿@* @{
+    ViewData["Title"] = "المساعد الذكي للمبيعات";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- كارت الواجهة -->
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-cpu text-info me-2"></i> استعلام المبيعات بالذكاء الاصطناعي
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="mb-3">
+                        <label for="txtQuestion" class="form-label fw-bold">اسألني أي شيء عن مبيعات الفروع وطبقاً للتاريخ:</label>
+                        <div class="input-group">
+                            <input type="text" id="txtQuestion" class="form-control form-control-lg" placeholder="مثال: كم إجمالي مبيعات فرع الإسكندرية الشهر الماضي؟" />
+                            <button class="btn btn-primary px-4" type="button" id="btnAsk">
+                                <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                <i class="bi bi-search me-1" id="searchIcon"></i> اسأل المساعد
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- مكان عرض النتيجة -->
+                    <div id="resultContainer" class="d-none">
+                        <div class="alert alert-success border-0 shadow-sm p-4">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-check-circle-fill me-1"></i> النتيجة:</h6>
+                            <h3 id="lblResult" class="fw-bold text-dark mb-0">--</h3>
+                        </div>
+
+                        <!-- قسم اختياري لمشاهدة كود الـ SQL المتولد -->
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSql">
+                                عرض استعلام الـ SQL المولد تلقائياً
+                            </button>
+                            <div class="collapse mt-2" id="collapseSql">
+                                <div class="card card-body bg-light text-start text-dark font-monospace" style="direction: ltr;" id="codeSql">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- استدعاء SweetAlert2 لو مش موجودة عندك في الـ Layout الأساسي -->
+    <script src="[https://cdn.jsdelivr.net/npm/sweetalert2@11](https://cdn.jsdelivr.net/npm/sweetalert2@11)"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#btnAsk").click(function () {
+                var questionText = $("#txtQuestion").val().trim();
+
+                if (questionText === "") {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'برجاء كتابة سؤالك أولاً!'
+                    });
+                    return;
+                }
+
+                // تشغيل الأنميشن والـ Spinner ليوضح للمستخدم أن السيستم شغال
+                $("#spinner").removeClass("d-none");
+                $("#searchIcon").addClass("d-none");
+                $("#btnAsk").prop("disabled", true);
+                $("#resultContainer").addClass("d-none");
+
+                // إرسال طلب AJAX للـ Controller
+                $.ajax({
+                    url: '/AiAssistant/AskAi',
+                    type: 'POST',
+                    data: { question: questionText },
+                    success: function (response) {
+                        // إيقاف الـ Spinner
+                        $("#spinner").addClass("d-none");
+                        $("#searchIcon").removeClass("d-none");
+                        $("#btnAsk").prop("disabled", false);
+
+                        if (response.errorMessage) {
+                            // لو الكنترولر رجع رسالة خطأ
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطأ',
+                                text: response.errorMessage
+                            });
+                        } else {
+                            // عرض النتائج بنجاح
+                            $("#lblResult").text(response.resultValue);
+                            $("#codeSql").text(response.sqlGenerated);
+                            $("#resultContainer").removeClass("d-none");
+                        }
+                    },
+                    error: function () {
+                        // في حال فشل السيرفر تماماً
+                        $("#spinner").addClass("d-none");
+                        $("#searchIcon").removeClass("d-none");
+                        $("#btnAsk").prop("disabled", false);
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ في الاتصال',
+                            text: 'تعذر الوصول إلى السيرفر، يرجى المحاولة لاحقاً.'
+                        });
+                    }
+                });
+            });
+
+            // السماح بالبحث عند الضغط على Enter داخل الـ Input
+            $("#txtQuestion").keypress(function (e) {
+                if (e.which == 13) {
+                    $("#btnAsk").click();
+                }
+            });
+        });
+    </script>
+} *@
