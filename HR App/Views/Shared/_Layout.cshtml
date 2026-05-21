@@ -95,7 +95,7 @@
                     <a href="/Leave/Roles" id="VRoles" class="nav-link">الصلاحيات</a>
                 </div>
                 <div class="nav-item ">
-                    <a href="/AiAssistant/Index" id="" class="nav-link">الذكاء الاصطناعي</a>
+                    <a href="/AiAssistant/Index" id="VAK" class="nav-link">الذكاء الاصطناعي</a>
                 </div>
              
             </div>
@@ -193,9 +193,20 @@
         $('#VRequestTypes').hide();
         $('#VEmployeeHierarchy').hide();
         $('#VREmployees').hide();
+                             $('#VAK').hide();
         // $('#VRMyRequests').hide();
-
-        if( role != 'Manager' && role != 'HeadOfficeHR' && role!= "HRandManager" && role != 'Employee'){
+        if  (username ===  '8669') {
+                         $('#VREmployees').show();
+             $('#VCreateEmployee').show();
+             $('#VRoles').show();
+             $('#VRequestTypes').show();
+             $('#VEmployeeHierarchy').show();
+             $('#VREmployees').show();
+              $('#VWeeklyOffGroups').show();
+               $('#VAK').show();
+              $('#VOfficialHolidays').show();
+        }
+       else if( role != 'Manager' && role != 'HeadOfficeHR' && role!= "HRandManager" && role != 'Employee'){
             window.location.href = "/Home/Logout";
         }
 

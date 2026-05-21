@@ -31,11 +31,15 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddDbContextFactory<TopSoftContext>(options =>
     options.UseSqlServer("Server=192.168.1.208;User ID=sa;Password=P@ssw0rd123;Database=TopSoft;Connect Timeout=7200;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;"));
 builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<TopSoftContext>();
+builder.Services.AddScoped<TopSoftContext>(); 
 builder.Services.AddHttpClient<AiTranslationService>();
+builder.Services.AddScoped<EgyptianNlpService>();
+builder.Services.AddScoped<AiSqlService>();
+builder.Services.AddScoped<SqlValidator>();
+builder.Services.AddScoped<SqlExecutionService>(); 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMvc();
-
+builder.Services.AddMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(180);

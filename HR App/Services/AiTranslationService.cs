@@ -6,140 +6,52 @@ namespace HR_App.Services
     public class AiTranslationService
     {
         private readonly HttpClient _httpClient;
-
-        private readonly string _ollamaEndpoint =
-            "http://localhost:11434/api/chat";
-
-        private readonly string _modelName = "llama3";
+        private readonly string _endpoint = "http://localhost:11434/api/chat";
+        private readonly string _model = "llama3";
 
         public AiTranslationService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-
-            _httpClient.Timeout =
-                TimeSpan.FromSeconds(30);
         }
 
-        public async Task<string> ExpandArabicQuery(string query)
+        public async Task<string> Translate(string input)
         {
-            if (string.IsNullOrWhiteSpace(query))
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            var prompt = $@"
+Convert Arabic to bilingual text (Arabic + English hints).
+
+Do NOT change meaning.
+Do NOT remove words.
+Return ONE sentence.
+
+TEXT:
+{input}";
+
+            var body = new
             {
-                return query;
-            }
-
-            try
-            {
-                string prompt = $@"
-You are a smart bilingual assistant.
-
-Your task:
-Expand Arabic business/store/item/location names
-into English equivalents.
-
-Rules:
-- Keep original Arabic words.
-- Add English equivalent beside them.
-- Return ONE sentence only.
-- No explanations.
-- No markdown.
-- No bullets.
-- No quotes.
-
-Examples:
-
-الشيخ زايد
-=
-الشيخ زايد Sheikh Zayed
-
-التجمع
-=
-التجمع Tagamoa Fifth Settlement
-
-كوكاكولا
-=
-كوكاكولا Coca Cola
-
-مدينة نصر
-=
-مدينة نصر Nasr City
-
-المهندسين
-=
-المهندسين Mohandessin
-
-Sentence:
-" + query;
-
-                var requestBody = new
+                model = _model,
+                messages = new[]
                 {
-                    model = _modelName,
+                    new { role = "user", content = prompt }
+                },
+                stream = false
+            };
 
-                    messages = new[]
-                    {
-                        new
-                        {
-                            role = "user",
-                            content = prompt
-                        }
-                    },
+            var res = await _httpClient.PostAsync(
+                _endpoint,
+                new StringContent(JsonSerializer.Serialize(body),
+                Encoding.UTF8, "application/json"));
 
-                    stream = false,
+            var json = await res.Content.ReadAsStringAsync();
 
-                    options = new
-                    {
-                        temperature = 0,
-                        top_p = 0.1,
-                        num_predict = 100
-                    }
-                };
+            using var doc = JsonDocument.Parse(json);
 
-                var jsonPayload =
-                    JsonSerializer.Serialize(requestBody);
-
-                var content =
-                    new StringContent(
-                        jsonPayload,
-                        Encoding.UTF8,
-                        "application/json"
-                    );
-
-                var response =
-                    await _httpClient.PostAsync(
-                        _ollamaEndpoint,
-                        content
-                    );
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    return query;
-                }
-
-                var json =
-                    await response.Content.ReadAsStringAsync();
-
-                using JsonDocument doc =
-                    JsonDocument.Parse(json);
-
-                string result =
-                    doc.RootElement
-                    .GetProperty("message")
-                    .GetProperty("content")
-                    .GetString() ?? query;
-
-                result = result.Trim();
-
-                // حماية ضد الهلاوس
-                if (result.Length > 500)
-                {
-                    return query;
-                }
-
-                return result;
-            }
-            catch
-            {
-                return query;
-            }
+            return doc.RootElement
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString() ?? input;
         }
     }
 }
