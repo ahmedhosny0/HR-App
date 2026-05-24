@@ -145,24 +145,60 @@ public class AiAssistantController : BaseController
     {
         string q = question.ToLower();
 
-        if (q.Contains("النهارده") || q.Contains("today")) question += " (DATE: TODAY)";
-        else if (q.Contains("امبارح") || q.Contains("yesterday")) question += " (DATE: YESTERDAY)";
-        else if (q.Contains("اول امبارح") || q.Contains("قبل امبارح") || q.Contains("day before yesterday")) question += " (DATE: TWO_DAYS_AGO)";
-        else if (q.Contains("اسبوع") || q.Contains("week") || q.Contains("آخر 7 ايام")) question += " (DATE: LAST_7_DAYS)";
-        else if (q.Contains("شهر") || q.Contains("month") || q.Contains("آخر 30 يوم")) question += " (DATE: LAST_30_DAYS)";
-        else if (q.Contains("الشهر ده") || q.Contains("this month")) question += " (DATE: THIS_MONTH)";
-        else if (q.Contains("الشهر اللي فات") || q.Contains("last month")) question += " (DATE: LAST_MONTH)";
-        else if (q.Contains("السنة دي") || q.Contains("this year")) question += " (DATE: THIS_YEAR)";
-        else if (q.Contains("السنة اللي فاتت") || q.Contains("last year")) question += " (DATE: LAST_YEAR)";
+        // MOST SPECIFIC FIRST
+        if (q.Contains("الشهر ده") || q.Contains("this month"))
+            question += " (DATE: THIS_MONTH)";
 
-        if (q.Contains("قارن") || q.Contains("compare")) question += " (INTENT: COMPARISON, GROUP BY StoreName)";
-        if (q.Contains("اعلى") || q.Contains("اكبر") || q.Contains("top")) question += " (INTENT: TOP, ORDER BY DESC)";
-        if (q.Contains("اقل") || q.Contains("اصغر") || q.Contains("lowest")) question += " (INTENT: LOWEST, ORDER BY ASC)";
-        if (q.Contains("فرع") || q.Contains("store")) question += " (TARGET: StoreName)";
+        else if (q.Contains("الشهر اللي فات") || q.Contains("last month"))
+            question += " (DATE: LAST_MONTH)";
+
+        else if (q.Contains("السنة دي") || q.Contains("this year"))
+            question += " (DATE: THIS_YEAR)";
+
+        else if (q.Contains("السنة اللي فاتت") || q.Contains("last year"))
+            question += " (DATE: LAST_YEAR)";
+
+        else if (q.Contains("النهارده") || q.Contains("today"))
+            question += " (DATE: TODAY)";
+
+        else if (q.Contains("امبارح") || q.Contains("yesterday"))
+            question += " (DATE: YESTERDAY)";
+
+        else if (q.Contains("اول امبارح") || q.Contains("قبل امبارح") || q.Contains("day before yesterday"))
+            question += " (DATE: TWO_DAYS_AGO)";
+
+        else if (q.Contains("آخر 7 ايام") || q.Contains("اسبوع") || q.Contains("week"))
+            question += " (DATE: LAST_7_DAYS)";
+
+        else if (q.Contains("آخر 30 يوم") || q.Contains("last 30 days"))
+            question += " (DATE: LAST_30_DAYS)";
+
+        // INTENT
+        if (q.Contains("قارن") || q.Contains("compare"))
+            question += " (INTENT: COMPARISON, GROUP BY StoreName)";
+
+        if (q.Contains("اعلى") || q.Contains("اكبر") || q.Contains("اكتر") || q.Contains("top"))
+            question += " (INTENT: TOP, ORDER BY DESC)";
+
+        if (q.Contains("اقل") || q.Contains("اصغر") || q.Contains("lowest"))
+            question += " (INTENT: LOWEST, ORDER BY ASC)";
+
+        // TARGET
+        if (q.Contains("فرع") || q.Contains("store"))
+            question += " (TARGET: StoreName)";
+
+        if (q.Contains("صنف") || q.Contains("منتج") || q.Contains("item"))
+            question += " (TARGET: ItemName)";
+
+        // SALES TYPE
+        if (q.Contains("فلوس") || q.Contains("مبيعات"))
+            question += " (METRIC: TotalSales)";
+
+        if (q.Contains("كمية") || q.Contains("وحدات"))
+            question += " (METRIC: Qty)";
 
         return question;
     }
-
     private async Task<string> GetSqlFromGemini(List<KeyValuePair<string, string>> conversationHistory, string currentUserQuery)
     {
         currentUserQuery = EnhanceQuestion(currentUserQuery);
