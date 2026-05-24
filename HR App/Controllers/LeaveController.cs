@@ -2953,43 +2953,63 @@ AND a.Status = 1  "; // 1 يعني Pending
             {
                 string sql = @"
         SELECT  
+
     Em.EmployeeName AS Employee,
-    Mang.EmployeeName AS Manager,
+
     Ro.RoleName,
+
     Em.EmployeeId,
-    Re.RequestTypeId,
-    App.ApproverId,
+
     Re.RequestId,
-    App.Status,
 
     rt.Name AS RequestType,
+
     Re.FromDate,
+
     Re.ToDate,
+
     Re.CreatedDate,
 
-   CASE when App.Status=1 then N'قيد الانتظار'
-    when App.Status=2 then N'مقبول'
-	 when App.Status=3 then N'مرفوض'
-	 else 'غير معروف '
-END AS StatusName
+    STUFF
+    (
+        (
+            SELECT 
+                ' | ' +
+                Mang2.EmployeeName + N' : ' +
 
-FROM HR_RequestApprovals App
+                CASE 
+                    WHEN App2.Status = 1 THEN N'قيد الانتظار'
+                    WHEN App2.Status = 2 THEN N'مقبول'
+                    WHEN App2.Status = 3 THEN N'مرفوض'
+                    ELSE N'غير معروف'
+                END
 
-INNER JOIN HR_Requests Re 
-    ON App.RequestId = Re.RequestId
+            FROM HR_RequestApprovals App2
+
+            INNER JOIN HR_Employees Mang2
+                ON App2.ApproverId = Mang2.EmployeeId
+
+            WHERE App2.RequestId = Re.RequestId
+
+            ORDER BY App2.StepOrder
+
+            FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)')
+    ,1,3,'') AS ManagersResponse
+
+FROM HR_Requests Re
 
 INNER JOIN HR_Employees Em 
     ON Re.EmployeeId = Em.EmployeeId
-
-INNER JOIN HR_Employees Mang 
-    ON App.ApproverId = Mang.EmployeeId
 
 INNER JOIN HR_Roles Ro 
     ON Ro.RoleId = Em.RoleId
 
 INNER JOIN HR_RequestTypes rt 
     ON Re.RequestTypeId = rt.RequestTypeId 
+
 WHERE Em.EmployeeCode = @code
+  --AND Re.RequestId = 35
 
 ";
 
@@ -3006,12 +3026,12 @@ WHERE Em.EmployeeCode = @code
                         RequestId = Convert.ToInt32(dr["RequestId"]),
                         Employee = dr["Employee"].ToString(),
                         RequestType = dr["RequestType"].ToString(),
-                        Manager = dr["Manager"].ToString(),
+                        //Manager = dr["Manager"].ToString(),
                         RoleName = dr["RoleName"].ToString(),
                         FromDate = (DateTime)dr["FromDate"],
                         ToDate = (DateTime)dr["ToDate"],
                         CreatedDate = (DateTime)dr["CreatedDate"],
-                        StatusName = dr["StatusName"].ToString()
+                        StatusName = dr["ManagersResponse"].ToString()
                     });
                 }
             }
@@ -3075,35 +3095,46 @@ WHERE Em.EmployeeCode = @code
                 string sql = @"
         SELECT  
     Em.EmployeeName AS Employee,
-    Mang.EmployeeName AS Manager,
     Ro.RoleName,
     Em.EmployeeId,
     Re.RequestTypeId,
-    App.ApproverId,
     Re.RequestId,
-    App.Status,
-
     rt.Name AS RequestType,
     Re.FromDate,
     Re.ToDate,
     Re.CreatedDate,
 
-   CASE when App.Status=1 then N'قيد الانتظار'
-    when App.Status=2 then N'مقبول'
-	 when App.Status=3 then N'مرفوض'
-	 else 'غير معروف '
-END AS StatusName
+    STUFF
+    (
+        (
+            SELECT 
+                ' | ' +
+                Mang2.EmployeeName + N' : ' +
 
-FROM HR_RequestApprovals App
+                CASE 
+                    WHEN App2.Status = 1 THEN N'قيد الانتظار'
+                    WHEN App2.Status = 2 THEN N'مقبول'
+                    WHEN App2.Status = 3 THEN N'مرفوض'
+                    ELSE N'غير معروف'
+                END
 
-INNER JOIN HR_Requests Re 
-    ON App.RequestId = Re.RequestId
+            FROM HR_RequestApprovals App2
+
+            INNER JOIN HR_Employees Mang2
+                ON App2.ApproverId = Mang2.EmployeeId
+
+            WHERE App2.RequestId = Re.RequestId
+
+            ORDER BY App2.StepOrder
+
+            FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)')
+    ,1,3,'') AS ManagersResponse
+
+FROM HR_Requests Re 
 
 INNER JOIN HR_Employees Em 
     ON Re.EmployeeId = Em.EmployeeId
-
-INNER JOIN HR_Employees Mang 
-    ON App.ApproverId = Mang.EmployeeId
 
 INNER JOIN HR_Roles Ro 
     ON Ro.RoleId = Em.RoleId
@@ -3112,18 +3143,40 @@ INNER JOIN HR_RequestTypes rt
     ON Re.RequestTypeId = rt.RequestTypeId 
 where 1=1 
 ";
-if (Wait)
+                if (Wait)
                 {
-                    sql += " and app.Status = 1 ";
+                    sql += @" 
+    AND EXISTS
+    (
+        SELECT 1
+        FROM HR_RequestApprovals A
+        WHERE A.RequestId = Re.RequestId
+        AND A.Status = 1
+    )";
                 }
+
                 if (Yes)
                 {
-                    sql += " and app.Status = 2 ";
+                    sql += @" 
+    AND EXISTS
+    (
+        SELECT 1
+        FROM HR_RequestApprovals A
+        WHERE A.RequestId = Re.RequestId
+        AND A.Status = 2
+    )";
                 }
 
                 if (No)
                 {
-                    sql += " and app.Status = 3 ";
+                    sql += @" 
+    AND EXISTS
+    (
+        SELECT 1
+        FROM HR_RequestApprovals A
+        WHERE A.RequestId = Re.RequestId
+        AND A.Status = 3
+    )";
                 }
                 SqlCommand cmd = new SqlCommand(sql, con);
                 cmd.Parameters.AddWithValue("@code", userCode);
@@ -3137,12 +3190,12 @@ if (Wait)
                     {
                         Employee = dr["Employee"].ToString(),
                         RequestType = dr["RequestType"].ToString(),
-                        Manager = dr["Manager"].ToString(),
+                       // Manager = dr["Manager"].ToString(),
                         RoleName = dr["RoleName"].ToString(),
                         FromDate = (DateTime)dr["FromDate"],
                         ToDate = (DateTime)dr["ToDate"],
                         CreatedDate = (DateTime)dr["CreatedDate"],
-                        StatusName = dr["StatusName"].ToString()
+                        StatusName = dr["ManagersResponse"].ToString()
                     });
                 }
             }

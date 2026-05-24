@@ -111,8 +111,8 @@
                     <tr>
                         <th>الحالة</th>
                         <th>الموظف</th>
-                        <th>المدير</th>
-                        <th>نوع الطلب</th>
+@*                         <th>المدير</th>
+ *@                        <th>نوع الطلب</th>
                         <th>من</th>
                         <th>إلى</th>
                         <th>تاريخ الإنشاء</th>
@@ -124,29 +124,44 @@
                     {
                     @foreach (var item in Model)
                     {
-                        string badgeClass =
-                        item.StatusName == "مقبول" ? "bg-success" :
-                        item.StatusName == "مرفوض" ? "bg-danger" :
-                        "bg-warning text-dark";
+                     
 
                         <tr>
 
-                            <!-- STATUS -->
-                            <td data-label="الحالة">
-                                <span class="badge @badgeClass px-3 py-2">
-                                    @item.StatusName
-                                </span>
-                            </td>
+
+                                <td data-label="الحالة">
+
+                                    @{
+                                        var responses = item.StatusName.Split('|');
+                                    }
+
+                                    @foreach (var response in responses)
+                                    {
+                                        var text = response.Trim();
+
+                                        string badgeClass =
+                                        text.Contains("مقبول") ? "bg-success" :
+                                        text.Contains("مرفوض") ? "bg-danger" :
+                                        "bg-warning text-dark";
+
+                                        <span class="badge @badgeClass px-3 py-2 me-1 mb-1">
+
+                                            @text
+
+                                        </span>
+                                    }
+
+                                </td>
 
                             <!-- EMPLOYEE -->
                             <td data-label="الموظف">
                                 <span class="fw-bold">@item.Employee</span>
                             </td>
 
-                            <!-- MANAGER -->
+                           @*  <!-- MANAGER -->
                             <td data-label="المدير">
                                 <span class="text-muted">@item.Manager</span>
-                            </td>
+                            </td> *@
 
                             <!-- TYPE -->
                             <td data-label="نوع الطلب">
