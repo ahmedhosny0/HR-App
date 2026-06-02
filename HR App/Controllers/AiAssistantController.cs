@@ -1,46 +1,33 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using System.Text;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Memory; // 1. تم إضافة مجال الأسماء الخاص بالكاش
-using Microsoft.Extensions.Configuration;
+﻿using HR_App.Controllers;
 using HR_App.ViewModel;
-using HR_App.Controllers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 public class AiAssistantController : BaseController
 {
-    private readonly string connStr = "Server=192.168.1.208;User ID=sa;Password=P@ssw0rd123;Database=TopSoft;Encrypt=False;TrustServerCertificate=True;";
-    private readonly string[] _geminiApiKeys;
-    private readonly IMemoryCache _cache; // 2. تعيين متغير الكاش الخاص بالنظام
-    private static int _currentKeyIndex = 0;
+    private readonly string connStr =
+        "Server=192.168.1.208;User ID=sa;Password=P@ssw0rd123;Database=TopSoft;Encrypt=False;TrustServerCertificate=True;";
 
-    // 3. تحديث الـ Constructor لاستقبال الـ IMemoryCache من خلال الـ Dependency Injection
+    private readonly string _openRouterApiKey;
+    private readonly IMemoryCache _cache;
+
     public AiAssistantController(IConfiguration configuration, IMemoryCache cache)
     {
         _cache = cache;
-        _geminiApiKeys = configuration.GetSection("GeminiSettings:ApiKeys").Get<string[]>();
+        _openRouterApiKey = configuration["OpenRouterSettings:ApiKey"];
 
-        if (_geminiApiKeys == null || _geminiApiKeys.Length == 0)
-        {
-            throw new Exception("تنبيه: لم يتم العثور على أي مفاتيح API في ملف appsettings.json");
-        }
-    }
-
-    private string GetCurrentApiKey()
-    {
-        int currentIndex = Thread.VolatileRead(ref _currentKeyIndex);
-        int index = Math.Abs(currentIndex) % _geminiApiKeys.Length;
-        return _geminiApiKeys[index];
-    }
-
-    private void SwitchToNextKey()
-    {
-        Interlocked.Increment(ref _currentKeyIndex);
+        if (string.IsNullOrEmpty(_openRouterApiKey))
+            throw new Exception("Missing API Key");
     }
 
     public IActionResult Index()
@@ -48,324 +35,548 @@ public class AiAssistantController : BaseController
         return View();
     }
 
+    // =====================================================
+    // MAIN AI ENDPOINT
+    // =====================================================
     [HttpPost]
-    public async Task<JsonResult> AskAi(string question)
+    public async Task<JsonResult> AskAi(string question, string userId = "1", int? sessionId = null)
     {
         var responseModel = new AiQueryVM { UserQuestion = question };
 
-        if (string.IsNullOrEmpty(question))
+        if (string.IsNullOrWhiteSpace(question))
         {
-            responseModel.ErrorMessage = "برجاء كتابة سؤال أولاً!";
+            responseModel.ErrorMessage = "اكتب السؤال أولاً";
             return Json(responseModel);
         }
 
         try
         {
-            // قراءة تاريخ المحادثة من الـ Session لحفظ السياق
-            var history = new List<KeyValuePair<string, string>>();
-            string sessionKey = "AiChatHistory";
-            string existingHistoryJson = HttpContext.Session.GetString(sessionKey);
+            // 1. Create or Get Session
+            int chatSessionId = sessionId ?? CreateSession(userId, question);
 
-            if (!string.IsNullOrEmpty(existingHistoryJson))
+            // 2. Save user message
+            SaveMessage(chatSessionId, "user", question);
+
+            // 3. Load history
+            var history = LoadMessages(chatSessionId);
+
+            // 🔥 5. Enhance question
+            string enhancedQuestion = EnhanceQuestion(history, question);
+
+            // 🔥 cache key ذكي
+            string contextKey = string.Join("|", history
+                .Where(x => x.Role == "user")
+                .TakeLast(3)
+                .Select(x => x.Content.ToLower()));
+
+            string cacheKey = $"ai_{enhancedQuestion}_{contextKey}";
+
+            // 🔥 check cache
+            if (_cache.TryGetValue(cacheKey, out CachedAiResult cached))
             {
-                history = JsonSerializer.Deserialize<List<KeyValuePair<string, string>>>(existingHistoryJson);
+                SaveMessage(chatSessionId, "assistant", cached.ResultValue);
+
+                return Json(new
+                {
+                    success = true,
+                    sessionId = chatSessionId,
+                    sql = cached.SqlGenerated,
+                    resultValue = cached.ResultValue
+                });
             }
 
-            // 4. فحص الكاش: إنشاء مفتاح فريد معتمد على نص السؤال بعد تنظيفه
-            string cacheKey = $"AiCache_{question.Trim().ToLower()}";
+            // 6. Generate SQL
+            string sql = await GetSqlFromGemini(history, enhancedQuestion);
 
-            if (_cache.TryGetValue(cacheKey, out CachedAiResult cachedData))
+            if (IsDangerous(sql))
             {
-                // [HIT] تم العثور على النتيجة في الكاش -> نملأ الموديل فوراً بدون استدعاء الـ API أو الـ DB
-                responseModel.SqlGenerated = cachedData.SqlGenerated;
-                responseModel.ResultValue = cachedData.ResultValue;
-
-                // تحديث الـ Session بالطلب لتظل الذاكرة مستمرة مع الـ AI للأسئلة التالية
-                UpdateSessionHistory(history, question, cachedData.SqlGenerated, sessionKey);
-
-                return Json(responseModel);
+                SaveMessage(chatSessionId, "assistant", "Blocked Query");
+                return Json(new { error = "dangerous sql" });
             }
 
-            // [MISS] في حال عدم وجود كاش مسبق -> نقوم بالدورة الكاملة (الذكاء الاصطناعي + قاعدة البيانات)
-            string generatedSql = await GetSqlFromGemini(history, question);
-            responseModel.SqlGenerated = generatedSql;
 
-            string upperSql = generatedSql.ToUpper();
-            if (upperSql.Contains("DROP") || upperSql.Contains("DELETE") || upperSql.Contains("UPDATE") || upperSql.Contains("TRUNCATE") || upperSql.Contains("ALTER"))
+            var result = ExecuteQuery(sql);
+
+            var response = new
             {
-                responseModel.ErrorMessage = "عذراً، الاستعلام الناتج يحتوي على عمليات غير مسموح بها!";
-                return Json(responseModel);
-            }
-
-            string dbResult = ExecuteReadOnlyQuery(generatedSql);
-            responseModel.ResultValue = dbResult;
-
-            // تحديث الـ Session بالبيانات الجديدة
-            UpdateSessionHistory(history, question, generatedSql, sessionKey);
-
-            // 5. تخزين النتيجة الجديدة في الكاش لتسريع الطلبات المتطابقة القادمة
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromMinutes(15)) // كاش مرن: يتجدد تلقائياً لمدة 15 دقيقة إضافية كلما سُئل نفس السؤال
-                .SetAbsoluteExpiration(TimeSpan.FromHours(1));   // كاش مطلق: تنتهي صلاحيته تماماً بعد ساعة لتحديث أي أرقام تغيرت بالـ DB
-
-            var dataToCache = new CachedAiResult
-            {
-                SqlGenerated = generatedSql,
-                ResultValue = dbResult
+                columns = result.FirstOrDefault()?.Keys,
+                rows = result
             };
 
-            _cache.Set(cacheKey, dataToCache, cacheOptions);
+            string jsonResult = JsonSerializer.Serialize(response);
+            // 8. Save assistant response + sql
+            SaveMessage(chatSessionId, "assistant", jsonResult);
+            SaveMessage(chatSessionId, "sql", sql);
+
+            // 9. Cache
+            _cache.Set(cacheKey, new CachedAiResult
+            {
+                SqlGenerated = sql,
+                ResultValue = jsonResult
+            },
+            new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            return Json(new
+            {
+                success = true,
+                sessionId = chatSessionId,
+                sql = sql,
+                resultValue = jsonResult // 👈 رجّع object مش string
+            });
         }
         catch (Exception ex)
         {
-            responseModel.ErrorMessage = "حدث خطأ أثناء معالجة طلبك: " + ex.Message;
+            return Json(new { error = ex.Message });
         }
-
-        return Json(responseModel);
     }
-
-    // دالة مساعدة معزولة لمنع تكرار كود تحديث الـ Session وحصر الـ History في 5 عناصر
-    private void UpdateSessionHistory(List<KeyValuePair<string, string>> history, string question, string sql, string sessionKey)
+    private void SaveMessage(int sessionId, string role, string message)
     {
-        // التحقق من أن السؤال الأخير ليس مكرراً لتجنب تشويه الـ History
-        if (history.Count == 0 || history[history.Count - 1].Key != question)
+        using var con = new SqlConnection(connStr);
+
+        using var cmd = new SqlCommand(@"
+        INSERT INTO ChatMessages (SessionId, Role, Message)
+        VALUES (@SessionId, @Role, @Message)", con);
+
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        cmd.Parameters.AddWithValue("@Role", role);
+        cmd.Parameters.AddWithValue("@Message", message);
+
+        con.Open();
+        cmd.ExecuteNonQuery();
+    }
+    private int CreateSession(string userId, string title)
+    {
+        using var con = new SqlConnection(connStr);
+
+        using var cmd = new SqlCommand(@"
+        INSERT INTO ChatSessions (UserId, Title)
+        OUTPUT INSERTED.Id
+        VALUES (@UserId, @Title)", con);
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Title", title);
+
+        con.Open();
+
+        return (int)cmd.ExecuteScalar();
+    }
+    private List<ChatMessage> LoadMessages(int sessionId)
+    {
+        var list = new List<ChatMessage>();
+
+        using var con = new SqlConnection(connStr);
+
+        using var cmd = new SqlCommand(@"
+        SELECT TOP 20 Role, Message
+        FROM ChatMessages
+        WHERE SessionId = @SessionId
+        ORDER BY Id ASC", con);
+
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
+        con.Open();
+
+        var reader = cmd.ExecuteReader();
+
+        while (reader.Read())
         {
-            history.Add(new KeyValuePair<string, string>(question, sql));
-
-            if (history.Count > 5)
+            list.Add(new ChatMessage
             {
-                history.RemoveAt(0);
-            }
-
-            HttpContext.Session.SetString(sessionKey, JsonSerializer.Serialize(history));
+                Role = reader["Role"].ToString(),
+                Content = reader["Message"].ToString()
+            });
         }
+
+        return list;
     }
 
-    private string EnhanceQuestion(string question)
+    // =====================================================
+    // CHAT MEMORY MODEL
+    // =====================================================
+    private class ChatMessage
     {
-        string q = question.ToLower();
+        public string Role { get; set; }
+        public string Content { get; set; }
+    }
 
-        // MOST SPECIFIC FIRST
-        if (q.Contains("الشهر ده") || q.Contains("this month"))
-            question += " (DATE: THIS_MONTH)";
+    // =====================================================
+    // LOAD HISTORY
+    // =====================================================
+    private List<ChatMessage> LoadHistory(string key)
+    {
+        var json = HttpContext.Session.GetString(key);
 
-        else if (q.Contains("الشهر اللي فات") || q.Contains("last month"))
-            question += " (DATE: LAST_MONTH)";
+        if (string.IsNullOrEmpty(json))
+            return new List<ChatMessage>();
 
-        else if (q.Contains("السنة دي") || q.Contains("this year"))
-            question += " (DATE: THIS_YEAR)";
+        return JsonSerializer.Deserialize<List<ChatMessage>>(json)
+               ?? new List<ChatMessage>();
+    }
 
-        else if (q.Contains("السنة اللي فاتت") || q.Contains("last year"))
-            question += " (DATE: LAST_YEAR)";
+    // =====================================================
+    // SAVE HISTORY (FIXED + SMART)
+    // =====================================================
+    private void SaveHistory(string key,
+                             List<ChatMessage> history,
+                             string userQuestion,
+                             string result,
+                             string sql)
+    {
+        history.Add(new ChatMessage { Role = "user", Content = userQuestion });
+        history.Add(new ChatMessage { Role = "assistant", Content = result });
+        history.Add(new ChatMessage { Role = "sql", Content = sql });
 
-        else if (q.Contains("النهارده") || q.Contains("today"))
-            question += " (DATE: TODAY)";
+        // keep last 12 messages only
+        if (history.Count > 12)
+            history = history.Skip(history.Count - 12).ToList();
 
-        else if (q.Contains("امبارح") || q.Contains("yesterday"))
+        HttpContext.Session.SetString(key, JsonSerializer.Serialize(history));
+    }
+
+    // =====================================================
+    // CONTEXT ENGINE (IMPORTANT FIX)
+    // =====================================================
+    private string EnhanceQuestion(List<ChatMessage> history, string question)
+    {
+        if (string.IsNullOrWhiteSpace(question))
+            return question;
+
+        // =============================
+        // 🔤 Normalize
+        // =============================
+        string NormalizeArabic(string text)
+        {
+            return text
+                .Replace("أ", "ا")
+                .Replace("إ", "ا")
+                .Replace("آ", "ا")
+                .Replace("ة", "ه")
+                .Replace("ى", "ي")
+                .Replace("ؤ", "و")
+                .Replace("ئ", "ي");
+        }
+
+        bool HasAny(string text, params string[] keys)
+            => keys.Any(k => text.Contains(k));
+
+        int? ExtractNumber(string text)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(text, @"\d+");
+            if (match.Success)
+                return int.Parse(match.Value);
+
+            var map = new Dictionary<string, int>
+        {
+            {"واحد",1},{"اتنين",2},{"اثنين",2},{"ثلاثه",3},{"اربعه",4},
+            {"خمسه",5},{"سته",6},{"سبعه",7},{"تمانيه",8},{"تسعه",9},{"عشره",10}
+        };
+
+            foreach (var k in map)
+                if (text.Contains(k.Key))
+                    return k.Value;
+
+            return null;
+        }
+
+        string q = NormalizeArabic(question.ToLower());
+
+        // =============================
+        // 🧠 Context
+        // =============================
+        var lastMessages = history?
+            .Where(x => x.Role == "user")
+            .TakeLast(3)
+            .Select(x => x.Content.ToLower()) ?? new List<string>();
+
+        string context = string.Join(" ", lastMessages);
+        string last = lastMessages.LastOrDefault() ?? "";
+
+        // =============================
+        // 🔁 Follow-up
+        // =============================
+        bool isFollowUp =
+            q.Length < 20 ||
+            HasAny(q, "طب", "طيب", "كمان", "وال", "بعد كده");
+
+        if (isFollowUp && !string.IsNullOrEmpty(context))
+            question = context + " + " + question;
+
+        // =============================
+        // 🔢 Numbers
+        // =============================
+        var number = ExtractNumber(q);
+
+        // =============================
+        // 🎯 Intent
+        // =============================
+        var intents = new List<string>();
+
+        if (HasAny(q, "قارن", "فرق"))
+            intents.Add("COMPARISON");
+
+        if (HasAny(q, "اعلى", "اكبر", "افضل"))
+            intents.Add($"TOP {(number ?? 1)}");
+
+        if (HasAny(q, "اقل", "اصغر"))
+            intents.Add($"LOW {(number ?? 1)}");
+
+        if (HasAny(q, "كل", "جميع"))
+            intents.Add("GROUP");
+
+        if (intents.Any())
+            question += $" (INTENT: {string.Join(", ", intents)})";
+
+        // =============================
+        // 📊 Sorting
+        // =============================
+        if (HasAny(q, "تنازلي", "من الاكبر"))
+            question += " (ORDER: DESC)";
+
+        if (HasAny(q, "تصاعدي", "من الاصغر"))
+            question += " (ORDER: ASC)";
+
+        // =============================
+        // 📅 Date
+        // =============================
+        if (q.Contains("اول امبارح"))
+            question += " (DATE: DAY-2)";
+        else if (q.Contains("امبارح"))
             question += " (DATE: YESTERDAY)";
+        else if (HasAny(q, "النهارده", "اليوم"))
+            question += " (DATE: TODAY)";
+        else if (q.Contains("الشهر"))
+            question += " (DATE: MONTH)";
 
-        else if (q.Contains("اول امبارح") || q.Contains("قبل امبارح") || q.Contains("day before yesterday"))
-            question += " (DATE: TWO_DAYS_AGO)";
-
-        else if (q.Contains("آخر 7 ايام") || q.Contains("اسبوع") || q.Contains("week"))
-            question += " (DATE: LAST_7_DAYS)";
-
-        else if (q.Contains("آخر 30 يوم") || q.Contains("last 30 days"))
-            question += " (DATE: LAST_30_DAYS)";
-
-        // INTENT
-        if (q.Contains("قارن") || q.Contains("compare"))
-            question += " (INTENT: COMPARISON, GROUP BY StoreName)";
-
-        if (q.Contains("اعلى") || q.Contains("اكبر") || q.Contains("اكتر") || q.Contains("top"))
-            question += " (INTENT: TOP, ORDER BY DESC)";
-
-        if (q.Contains("اقل") || q.Contains("اصغر") || q.Contains("lowest"))
-            question += " (INTENT: LOWEST, ORDER BY ASC)";
-
-        // TARGET
-        if (q.Contains("فرع") || q.Contains("store"))
+        // =============================
+        // 🎯 Targets
+        // =============================
+        if (HasAny(q, "فرع"))
             question += " (TARGET: StoreName)";
 
-        if (q.Contains("صنف") || q.Contains("منتج") || q.Contains("item"))
+        if (HasAny(q, "منتج", "صنف"))
             question += " (TARGET: ItemName)";
 
-        // SALES TYPE
-        if (q.Contains("فلوس") || q.Contains("مبيعات"))
+        if (HasAny(q, "شركه", "فرانشايز"))
+            question += " (TARGET: StoreFranchise)";
+
+        // =============================
+        // 💰 Metrics
+        // =============================
+        if (HasAny(q, "مبيعات", "ايراد"))
             question += " (METRIC: TotalSales)";
 
-        if (q.Contains("كمية") || q.Contains("وحدات"))
+        if (HasAny(q, "كميه", "عدد"))
             question += " (METRIC: Qty)";
+
+        // =============================
+        // 🧠 Smart Inheritance
+        // =============================
+        if (isFollowUp)
+        {
+            if (!q.Contains("مبيعات") && last.Contains("مبيعات"))
+                question += " (METRIC: TotalSales)";
+
+            if (!q.Contains("فرع") && last.Contains("فرع"))
+                question += " (TARGET: StoreName)";
+        }
 
         return question;
     }
-    private async Task<string> GetSqlFromGemini(List<KeyValuePair<string, string>> conversationHistory, string currentUserQuery)
+    // =====================================================
+    // AI CALL
+    // =====================================================
+    private async Task<string> GetSqlFromGemini(List<ChatMessage> history, string question)
     {
-        currentUserQuery = EnhanceQuestion(currentUserQuery);
-        string schemaPrompt = @"
-    You are a professional SQL Server (T-SQL) expert.
-    Database View: [dbo].[RptSalesDynamic]
-    IMPORTANT COLUMNS: StoreName, StoreFranchise, ItemName, Qty, TotalSales, TransDate
-    ====================================================
-    CRITICAL RULES:
-    1- ALWAYS return ONE SINGLE TEXT VALUE (ExecuteScalar).
-    2- NEVER return table.
-    3- NEVER use SELECT *.
-    4- NEVER use UNION.
-    5- MUST use string concatenation using + or CONCAT.
-    6- Convert numbers to NVARCHAR.
-    ====================================================
-    LANGUAGE RULES:
-    - You MUST understand Arabic and English.
-    - If user writes Arabic → understand it → generate SQL in English.
-    - DO NOT output Arabic words inside SQL except in LIKE filters.
-    ====================================================
-    BRANCH SEARCH RULE:
-    If user mentions branch: Use BOTH Arabic & English: (StoreName LIKE N'%زايد%' OR StoreName LIKE N'%Zayed%')
-    ====================================================
-    DATE RULES:
-    TODAY: TransDate = CAST(GETDATE() AS DATE)
-    YESTERDAY: TransDate = CAST(DATEADD(DAY,-1,GETDATE()) AS DATE)
-    TWO_DAYS_AGO: TransDate = CAST(DATEADD(DAY,-2,GETDATE()) AS DATE)
-    LAST_7_DAYS: TransDate >= CAST(DATEADD(DAY,-7,GETDATE()) AS DATE)
-    LAST_30_DAYS: TransDate >= CAST(DATEADD(DAY,-30,GETDATE()) AS DATE)
-    THIS_MONTH: ByMonth = MONTH(GETDATE()) AND ByYear = YEAR(GETDATE())
-    LAST_MONTH: ByMonth = MONTH(DATEADD(MONTH,-1,GETDATE())) AND ByYear = YEAR(DATEADD(MONTH,-1,GETDATE()))
-    THIS_YEAR: ByYear = YEAR(GETDATE())
-    LAST_YEAR: ByYear = YEAR(GETDATE()) - 1
-    ====================================================
-    INTENT RULES:
-    - Comparison → return highest + lowest
-    - Top → ORDER BY DESC
-    - Lowest → ORDER BY ASC
-    ====================================================
-    SQL SERVER VERSION RULE:
-    You are working on SQL Server 2012.
-    DO NOT USE: STRING_AGG, FORMAT, CONCAT_WS
-    USE INSTEAD: STUFF + FOR XML PATH for aggregation
-    OUTPUT RULE: Return ONLY SQL. No explanation. No markdown.
-    ====================================================
-    IMPORTANT: DO NOT include currency words like: 'ريال' or 'SAR' or 'EGP'. Return numbers ONLY.";
-
-        var contentsList = new List<object>
+        var messages = new List<object>
         {
-            new { role = "user", parts = new[] { new { text = schemaPrompt } } },
-            new { role = "model", parts = new[] { new { text = "Understood. I will strictly generate T-SQL for ExecuteScalar based on your rules." } } }
+            new
+            {
+                role = "system",
+                content = GetPrompt()
+            }
         };
 
-        if (conversationHistory != null)
+        foreach (var msg in history.TakeLast(8))
         {
-            foreach (var chat in conversationHistory)
+            messages.Add(new
             {
-                if (!string.IsNullOrWhiteSpace(chat.Key) && !string.IsNullOrWhiteSpace(chat.Value))
-                {
-                    contentsList.Add(new { role = "user", parts = new[] { new { text = chat.Key.Trim() } } });
-                    contentsList.Add(new { role = "model", parts = new[] { new { text = chat.Value.Trim() } } });
-                }
-            }
+                role = msg.Role == "sql" ? "assistant" : msg.Role,
+                content = msg.Content
+            });
         }
 
-        contentsList.Add(new { role = "user", parts = new[] { new { text = currentUserQuery } } });
-
-        string[] models = new string[] { "gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro" };
-        int maxRetryAttempts = 3;
-
-        foreach (var modelName in models)
+        messages.Add(new
         {
-            for (int attempt = 1; attempt <= maxRetryAttempts; attempt++)
-            {
-                string activeKey = GetCurrentApiKey();
-                string url = $"https://generativelanguage.googleapis.com/v1beta/models/{modelName}:generateContent?key={activeKey}";
+            role = "user",
+            content = question
+        });
 
-                try
-                {
-                    using (var client = new HttpClient())
-                    {
-                        var requestBody = new { contents = contentsList.ToArray() };
-                        var json = JsonSerializer.Serialize(requestBody);
-                        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var client = new HttpClient();
 
-                        var response = await client.PostAsync(url, content);
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _openRouterApiKey);
 
-                        if (response.IsSuccessStatusCode)
-                        {
-                            var jsonResponse = await response.Content.ReadAsStringAsync();
+        var body = new
+        {
+            model = "deepseek/deepseek-chat",
+            messages,
+            temperature = 0.1,
+            max_tokens = 300
+        };
 
-                            using (JsonDocument doc = JsonDocument.Parse(jsonResponse))
-                            {
-                                var root = doc.RootElement;
-                                if (root.TryGetProperty("candidates", out var candidates) && candidates.GetArrayLength() > 0)
-                                {
-                                    var firstCandidate = candidates[0];
-                                    if (firstCandidate.TryGetProperty("content", out var resContent))
-                                    {
-                                        if (resContent.TryGetProperty("parts", out var parts) && parts.GetArrayLength() > 0)
-                                        {
-                                            string rawSql = parts[0].GetProperty("text").GetString();
+        var json = JsonSerializer.Serialize(body);
 
-                                            var cleaned = rawSql.Replace("```sql", "")
-                                                                .Replace("```SQL", "")
-                                                                .Replace("```", "")
-                                                                .Replace("\n", " ")
-                                                                .Replace("\r", " ")
-                                                                .Trim();
+        var res = await client.PostAsync(
+            "https://openrouter.ai/api/v1/chat/completions",
+            new StringContent(json, Encoding.UTF8, "application/json"));
 
-                                            cleaned = cleaned.Replace("ريال", "")
-                                                             .Replace("SAR", "")
-                                                             .Replace("EGP", "");
+        var result = await res.Content.ReadAsStringAsync();
 
-                                            return cleaned;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+        using var doc = JsonDocument.Parse(result);
 
-                        if ((int)response.StatusCode == 429)
-                        {
-                            SwitchToNextKey();
-                            await Task.Delay(1000);
-                            continue;
-                        }
+        string sql = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
 
-                        if (((int)response.StatusCode == 503) && attempt < maxRetryAttempts)
-                        {
-                            await Task.Delay(2000 * attempt);
-                            continue;
-                        }
-
-                        break;
-                    }
-                }
-                catch (Exception)
-                {
-                    SwitchToNextKey();
-                    if (attempt == maxRetryAttempts && modelName == models[models.Length - 1])
-                        throw;
-
-                    await Task.Delay(1000);
-                }
-            }
-        }
-
-        throw new Exception("جميع خوادم الذكاء الاصطناعي مشغولة حالياً، برجاء إعادة المحاولة بعد لحظات.");
+        return Clean(sql);
     }
 
-    private string ExecuteReadOnlyQuery(string sqlQuery)
+    // =====================================================
+    // PROMPT
+    // =====================================================
+    private string GetPrompt()
     {
-        using (SqlConnection con = new SqlConnection(connStr))
+        return @"
+You are SQL Server expert.
+
+Table: RptSalesDynamic
+Columns:
+StoreName, StoreFranchise, ItemName, Qty, TotalSales, TransDate
+
+Mapping Rules (VERY IMPORTANT):
+- كلمة 'فرع' أو 'فروع' = StoreName
+- كلمة 'شركة' أو 'فرانشايز' = StoreFranchise
+- كلمة 'منتج' أو 'صنف' = ItemName
+- كلمة 'مبيعات' = SUM(TotalSales)
+- كلمة 'كمية' = SUM(Qty)
+IMPORTANT MATCHING RULE:
+- When filtering StoreName:
+  ALWAYS use LIKE with LOWER
+  AND match both Arabic and English loosely
+
+Example:
+WHERE LOWER(StoreName) LIKE LOWER(N'%zayed%')
+   OR LOWER(StoreName) LIKE LOWER(N'%زايد%')
+STRICT RULES:
+- Return ONLY raw SQL query
+- Do NOT include any explanation
+- Do NOT include any text before or after SQL
+- Do NOT say 'Here is the query'
+- Output must start with SELECT or WITH only
+";
+    }
+
+    // =====================================================
+    // EXECUTE SQL
+    // =====================================================
+    private List<Dictionary<string, object>> ExecuteQuery(string sql)
+    {
+        var result = new List<Dictionary<string, object>>();
+
+        using var con = new SqlConnection(connStr);
+        using var cmd = new SqlCommand(sql, con);
+
+        con.Open();
+
+        using var reader = cmd.ExecuteReader();
+
+        while (reader.Read())
         {
-            using (SqlCommand cmd = new SqlCommand(sqlQuery, con))
+            var row = new Dictionary<string, object>();
+
+            for (int i = 0; i < reader.FieldCount; i++)
             {
-                con.Open();
-                var result = cmd.ExecuteScalar();
-                return result != null && result != DBNull.Value ? result.ToString() : "لا توجد بيانات مطابقة.";
+                row[reader.GetName(i)] = reader[i];
             }
+
+            result.Add(row);
         }
+
+        return result;
+    }
+    private string ExecuteReadOnlyQuery(string sql)
+    {
+        using var con = new SqlConnection(connStr);
+        using var cmd = new SqlCommand(sql, con);
+
+        con.Open();
+
+        using var reader = cmd.ExecuteReader();
+
+        if (!reader.HasRows)
+            return "No data found";
+
+        var sb = new StringBuilder();
+
+        // Headers
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            sb.Append(reader.GetName(i) + "\t");
+        }
+        sb.AppendLine();
+
+        // Rows
+        while (reader.Read())
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                sb.Append(reader[i]?.ToString() + "\t");
+            }
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    // =====================================================
+    // SAFETY
+    // =====================================================
+    private bool IsDangerous(string sql)
+    {
+        if (string.IsNullOrWhiteSpace(sql)) return true;
+
+        sql = sql.ToUpper();
+
+        return sql.Contains("DROP")
+            || sql.Contains("DELETE")
+            || sql.Contains("UPDATE")
+            || sql.Contains("INSERT")
+            || sql.Contains("ALTER")
+            || sql.Contains("TRUNCATE");
+    }
+
+    // =====================================================
+    // CLEAN SQL
+    // =====================================================
+    private string Clean(string sql)
+    {
+        return sql
+            .Replace("```sql", "")
+            .Replace("```", "")
+            .Replace("\n", " ")
+            .Replace("\r", " ")
+            .Trim();
     }
 }
 
-// 6. كلاس مساعد لتهيئة الهيكل المخزن داخل الكاش
+// =====================================================
+// CACHE MODEL
+// =====================================================
 public class CachedAiResult
 {
     public string SqlGenerated { get; set; }

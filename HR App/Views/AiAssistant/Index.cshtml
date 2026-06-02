@@ -2,380 +2,476 @@
     ViewData["Title"] = "المساعد الذكي للمبيعات";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 <style>
 
+    body {
+        background: #f1f3f6;
+    }
+
+    #chatBox {
+        height: 500px;
+        overflow-y: auto;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        direction: rtl;
+        scroll-behavior: smooth;
+        border: 1px solid #e5e7eb;
+    }
+
+    /* ========================= */
+    /* 💬 Messages */
+    /* ========================= */
+    .msg {
+        padding: 12px 16px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+        max-width: 75%;
+        word-wrap: break-word;
+        line-height: 1.7;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        animation: fadeInUp 0.3s ease;
+    }
+
+    /* 👤 User */
+    .msg-user {
+        background: linear-gradient(135deg, #0d6efd, #3d8bfd);
+        color: white;
+        margin-right: auto;
+        border-bottom-right-radius: 4px;
+    }
+
+    /* 🤖 AI */
+    .msg-ai {
+        background: #f9fafb;
+        color: #222;
+        margin-left: auto;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #eee;
+    }
+
+    /* 🧾 SQL */
+    .msg-sql {
+        background: #1e1e1e;
+        color: #00ff88;
+        font-family: Consolas;
+        font-size: 13px;
+        border-radius: 10px;
+        padding: 12px;
+    }
+
+    .msg-header {
+        font-size: 12px;
+        opacity: .6;
+        margin-bottom: 6px;
+    }
+
+    /* ========================= */
+    /* ✨ Animations */
+    /* ========================= */
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ========================= */
+    /* ⏳ Typing */
+    /* ========================= */
+    .dot {
+        height: 6px;
+        width: 6px;
+        margin: 0 2px;
+        background-color: #999;
+        border-radius: 50%;
+        display: inline-block;
+        animation: blink 1.4s infinite both;
+    }
+
+        .dot:nth-child(2) {
+            animation-delay: .2s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: .4s;
+        }
+
+    @@keyframes blink {
+        0% {
+            opacity: .2;
+        }
+
+        20% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: .2;
+        }
+    }
+
+    /* ========================= */
+    /* 📊 Table */
+    /* ========================= */
+    .table {
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+
+        .table th {
+            background: #212529;
+            color: white;
+            font-weight: 600;
+        }
+
+        .table td {
+            background: #fff;
+        }
+
+    /* ========================= */
+    /* 🎯 Input */
+    /* ========================= */
+    #txtQuestion {
+        border-radius: 12px;
+    }
+
+    #btnAsk {
+        border-radius: 12px;
+    }
+
+    /* ========================= */
+    /* ⚡ Quick buttons */
+    /* ========================= */
     .quick-chip {
-        white-space: normal;
-        text-align: center;
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 13px;
+        transition: all 0.2s;
     }
 
-    #codeSql {
-        overflow-x: auto;
-        direction: ltr;
-    }
-
+        .quick-chip:hover {
+            transform: translateY(-2px);
+        }
+    /* ========================= */
+    /* 📱 Mobile تحسين */
+    /* ========================= */
     @@media (max-width: 768px) {
+        #chatBox
 
-        .card-header h4 {
-            font-size: 1.1rem;
-        }
-
-        .quick-chip {
-            width: 100%;
-        }
-
-        #lblResult {
-            font-size: 1.1rem;
-        }
-
-        .card-body {
-            padding: 1rem;
-        }
+    {
+        height: calc(100vh - 220px);
+        padding: 12px;
+        border-radius: 12px;
     }
 
+    .msg {
+        max-width: 90%;
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+
+    .msg-sql {
+        font-size: 11px;
+    }
+
+    /* input row */
+    .chat-input-row {
+        display: flex;
+        gap: 8px;
+    }
+
+        .chat-input-row input {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .chat-input-row button {
+            width: 55px;
+            flex-shrink: 0;
+        }
+
+    /* quick buttons scroll */
+    .quick-container {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 5px;
+    }
+
+    .quick-chip {
+        white-space: nowrap;
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+
+    }
 </style>
+
 <div class="container mt-4" style="direction:rtl">
 
-    <div class="card shadow border-0">
+    <div class="card shadow-lg border-0" style="border-radius:16px;">
 
         <!-- HEADER -->
-        <div class="card-header bg-primary text-white">
+        <div class="card-header text-white"
+             style="background: linear-gradient(135deg,#0d6efd,#3d8bfd); border-radius:16px 16px 0 0;">
 
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-                <div>
-
-                    <h4 class="mb-1">
-                        <i class="fa fa-robot me-2"></i>
-                        المساعد الذكي للمبيعات
-                    </h4>
-
-                    <small class="opacity-75">
-                        توليد وتنفيذ استعلامات SQL فورياً وتحليل بيانات المبيعات
-                    </small>
-
-                </div>
-
-                <div>
-                    <span class="badge bg-light text-primary px-3 py-2">
-                        AI Powered
-                    </span>
-                </div>
-
-            </div>
+            <h4 class="mb-1">🤖 المساعد الذكي للمبيعات</h4>
+            <small style="opacity:.8">تحليل ذكي + SQL + تقارير فورية</small>
 
         </div>
 
-        <!-- BODY -->
         <div class="card-body">
 
-            <!-- QUESTION -->
-            <div class="mb-4">
+            <!-- CHAT -->
+            <div id="chatBox"></div>
 
-                <label class="form-label fw-bold mb-2">
+            <!-- INPUT -->
+            <div class="chat-input-row mt-3">
 
-                    <i class="fa fa-comments text-primary"></i>
-                    اسأل عن المبيعات أو الفروع أو الأصناف
+                <input type="text"
+                       id="txtQuestion"
+                       class="form-control shadow-sm"
+                       placeholder="اكتب سؤالك..." />
 
-                </label>
-
-                <div class="row g-2">
-
-                    <div class="col-12 col-md-9">
-
-                        <input type="text"
-                               id="txtQuestion"
-                               class="form-control form-control-lg"
-                               placeholder="مثال: ما هو الفرع الأعلى مبيعات اليوم؟" />
-
-                    </div>
-
-                    <div class="col-12 col-md-3 d-grid">
-
-                        <button class="btn btn-primary btn-lg"
-                                type="button"
-                                id="btnAsk">
-
-                            <span id="spinner"
-                                  class="spinner-border spinner-border-sm d-none me-2">
-                            </span>
-
-                            <i class="fa fa-search" id="searchIcon"></i>
-
-                            <span id="btnText">
-                                تحليل السؤال
-                            </span>
-
-                        </button>
-
-                    </div>
-
-                </div>
+                <button class="btn btn-primary shadow-sm" id="btnAsk">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
 
             </div>
 
-            <!-- QUICK QUESTIONS -->
-            <div class="mb-4">
-
-                <label class="form-label fw-bold mb-3">
-
-                    <i class="fa fa-lightbulb text-warning"></i>
-                    أسئلة سريعة
-
-                </label>
-
-                <div class="d-flex flex-wrap gap-2">
-
-                    <button type="button"
-                            class="btn btn-outline-primary quick-chip">
-
-                        كم إجمالي مبيعات فرع زايد اليوم؟
-
-                    </button>
-
-                    <button type="button"
-                            class="btn btn-outline-secondary quick-chip">
-
-                        أعلى صنف مبيعاً هذا الشهر
-
-                    </button>
-
-                    <button type="button"
-                            class="btn btn-outline-success quick-chip">
-
-                        أقل فرع مبيعات اليوم
-
-                    </button>
-
-                    <button type="button"
-                            class="btn btn-outline-dark quick-chip">
-
-                        مقارنة مبيعات الفروع
-
-                    </button>
-
-                </div>
-
-            </div>
-
-            <hr />
-
-            <!-- RESULT -->
-            <div id="resultContainer" class="d-none">
-
-                <!-- RESULT CARD -->
-                <div class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header bg-success text-white">
-
-                        <h6 class="mb-0">
-
-                            <i class="fa fa-database"></i>
-                            نتيجة التحليل
-
-                        </h6>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="bg-light rounded p-4 border">
-
-                            <h4 id="lblResult"
-                                class="fw-bold text-dark mb-0">
-
-                                --
-
-                            </h4>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <!-- SQL CARD -->
-                <div class="card border-0 shadow-sm">
-
-                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-
-                        <div>
-
-                            <i class="fa fa-code"></i>
-                            كود SQL المولد
-
-                        </div>
-
-                        <button class="btn btn-sm btn-outline-light"
-                                onclick="copySqlToClipboard()">
-
-                            <i class="fa fa-copy"></i>
-                            نسخ
-
-                        </button>
-
-                    </div>
-
-                    <div class="card-body bg-dark">
-
-                        <pre id="codeSql"
-                             class="text-success mb-0"
-                             style="white-space:pre-wrap;font-size:14px;font-family:Consolas;"></pre>
-
-                    </div>
-
-                </div>
+            <!-- QUICK -->
+            <div class="mt-3 d-flex gap-2 quick-container">
+                <button class="btn btn-outline-primary quick-chip">أعلى مبيعات اليوم</button>
+                <button class="btn btn-outline-success quick-chip">أقل فرع مبيعات</button>
+                <button class="btn btn-outline-dark quick-chip">قارن الفروع</button>
 
             </div>
 
         </div>
-
     </div>
-
 </div>
 
-@section Scripts
-{
+@section Scripts {
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
 
-        $(document).ready(function () {
+        let isTyping = false;
 
-            // ASK BUTTON
-            $("#btnAsk").click(function () {
+               function scrollDown() {
+            let box = $("#chatBox")[0];
+            box.scrollTo({
+                top: box.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+        function addMessage(type, text, id = null) {
 
-                var questionText = $("#txtQuestion").val().trim();
+            let css = "";
 
-                if (questionText === "") {
+            if (type === "user") css = "msg msg-user";
+            if (type === "ai") css = "msg msg-ai";
+            if (type === "sql") css = "msg msg-sql";
 
-                    Swal.fire({
+            let elementId = id ? `id="${id}"` : "";
 
-                        icon: 'warning',
-                        title: 'تنبيه',
-                        text: 'برجاء كتابة سؤال أولاً'
+            $("#chatBox").append(`
+                <div ${elementId} class="${css}">${text}</div>
+            `);
 
-                    });
+            scrollDown();
+        }
 
-                    return;
+        // ✨ Typing effect
+        function typeText(text, elementId, speed = 15) {
+
+            let i = 0;
+            let el = document.getElementById(elementId);
+            el.innerHTML = "";
+
+            let interval = setInterval(() => {
+
+                el.innerHTML += text.charAt(i);
+                i++;
+
+                scrollDown();
+
+                if (i >= text.length) {
+                    clearInterval(interval);
                 }
 
-                // LOADING
-                $("#spinner").removeClass("d-none");
-                $("#searchIcon").addClass("d-none");
+            }, speed);
+        }
 
-                $("#btnText").text("جاري التحليل...");
+                        function showTyping() {
 
-                $("#btnAsk").prop("disabled", true);
+            $("#chatBox").append(`
+                <div id="typingBox" class="msg msg-ai">
+                    <div style="font-size:12px;opacity:.6;margin-bottom:4px;">
+                        🤖 المساعد
+                    </div>
+                    <div>
+                        يفكر
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                </div>
+            `);
 
-                $("#resultContainer").addClass("d-none");
+            scrollDown();
+        }
 
-                $.ajax({
+          
+        function removeTyping() {
+            $("#typingBox").remove();
+        }
 
-                    url: '/AiAssistant/AskAi',
+        function sendQuestion() {
 
-                    type: 'POST',
+            let questionText = $("#txtQuestion").val().trim();
 
-                    data: { question: questionText },
+            if (questionText === "") {
+                Swal.fire("تنبيه", "اكتب سؤال أولاً", "warning");
+                return;
+            }
 
-                    success: function (response) {
+            addMessage("user", questionText);
 
-                        $("#spinner").addClass("d-none");
+            $("#txtQuestion").val("");
+            $("#spinner").removeClass("d-none");
 
-                        $("#searchIcon").removeClass("d-none");
+            // 🔥 show typing immediately
+            showTyping();
 
-                        $("#btnText").text("تحليل السؤال");
+            $.ajax({
+                url: '/AiAssistant/AskAi',
+                type: 'POST',
+                data: { question: questionText },
 
-                        $("#btnAsk").prop("disabled", false);
+                success: function (response) {
 
-                        if (response.errorMessage) {
+                    $("#spinner").addClass("d-none");
+                    removeTyping();
 
-                            Swal.fire({
-
-                                icon: 'error',
-                                title: 'خطأ',
-                                text: response.errorMessage
-
-                            });
-
-                        }
-                        else {
-
-                            $("#lblResult").text(response.resultValue);
-
-                            $("#codeSql").text(response.sqlGenerated);
-
-                            $("#resultContainer").removeClass("d-none");
-
-                        }
-
-                    },
-
-                    error: function () {
-
-                        $("#spinner").addClass("d-none");
-
-                        $("#searchIcon").removeClass("d-none");
-
-                        $("#btnText").text("تحليل السؤال");
-
-                        $("#btnAsk").prop("disabled", false);
-
-                        Swal.fire({
-
-                            icon: 'error',
-                            title: 'خطأ',
-                            text: 'تعذر الاتصال بالخادم'
-
-                        });
-
+                    if (response.errorMessage) {
+                        addMessage("ai", "❌ " + response.errorMessage);
+                        return;
                     }
 
-                });
+                    let id = "ai_" + Date.now();
 
-            });
+                    addMessage("ai", "", id);
 
-            // QUICK CHIPS
-            $(".quick-chip").click(function () {
+                        let result = response?.resultValue ?? null;
 
-                $("#txtQuestion").val($(this).text());
+        if (typeof result === "string") {
+            try {
+                result = JSON.parse(result);
+            } catch {
+                console.log("JSON parse error");
+            }
+        }
 
-                $("#btnAsk").click();
+        if (result && result.rows) {
 
-            });
+            if (result.rows.length === 1 && result.columns.length === 1) {
+                typeText("📊 " + result.rows[0][result.columns[0]], id);
+            } else {
+                renderTable(result, id);
+            }
 
-            // ENTER
-            $("#txtQuestion").keypress(function (e) {
+                } else {
 
-                if (e.which == 13) {
+            if (typeof result === "object") {
+                renderTable(result, id);
+            } else {
+                typeText("📊 " + (result || "No data"), id);
+            }
 
-                    $("#btnAsk").click();
+        }
+                    // SQL improved UI
+        //                    if (response.sql) {
+        //     addSqlBlock(response.sql);
+        // }
+                },
 
+                error: function () {
+                    $("#spinner").addClass("d-none");
+                    removeTyping();
+                    addMessage("ai", "❌ خطأ في السيرفر");
                 }
+            });
+        }
+                function renderTable(data, elementId) {
 
+            let html = "<div style='overflow:auto'><table class='table table-bordered table-sm'>";
+
+            // Header
+            html += "<thead><tr>";
+            data.columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += "</tr></thead>";
+
+            // Rows
+            html += "<tbody>";
+            data.rows.forEach(row => {
+                html += "<tr>";
+                data.columns.forEach(col => {
+                    html += `<td>${row[col]}</td>`;
+                });
+                html += "</tr>";
+            });
+            html += "</tbody></table></div>";
+
+            document.getElementById(elementId).innerHTML = html;
+        }
+                function addSqlBlock(sql) {
+
+            let id = "sql_" + Date.now();
+
+            $("#chatBox").append(`
+                <div class="msg msg-sql">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>🧾 SQL Query</span>
+                        <button onclick="copySql('${id}')" class="btn btn-sm btn-success">Copy</button>
+                    </div>
+                    <pre id="${id}">${sql}</pre>
+                </div>
+            `);
+
+            scrollDown();
+        }
+
+        function copySql(id) {
+            let text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            Swal.fire("Copied", "SQL copied", "success");
+        }
+        $(document).ready(function () {
+
+            $("#btnAsk").click(sendQuestion);
+
+            $("#txtQuestion").keypress(function (e) {
+                if (e.which == 13) sendQuestion();
+            });
+
+            $(".quick-chip").click(function () {
+                $("#txtQuestion").val($(this).text());
+                sendQuestion();
             });
 
         });
 
-        // COPY SQL
-        function copySqlToClipboard() {
-
-            var sqlText = $("#codeSql").text();
-
-            navigator.clipboard.writeText(sqlText);
-
-            Swal.fire({
-
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: 'تم نسخ SQL',
-                showConfirmButton: false,
-                timer: 1500
-
-            });
-
-        }
-
     </script>
+
 }
