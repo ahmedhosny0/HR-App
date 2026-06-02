@@ -1735,19 +1735,70 @@ AND R.FromDate <= @EndDate";
 
                             break;
                     }
+                    int pendingDays = 0;
+
+                    string pendingQuery = @"
+;WITH LastApproval AS
+(
+    SELECT
+        A.RequestId,
+        A.Status,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY A.RequestId
+            ORDER BY A.StepOrder DESC
+        ) RN
+    FROM HR_RequestApprovals A
+)
+SELECT
+    ISNULL(
+        SUM(DATEDIFF(DAY,R.FromDate,R.ToDate) + 1)
+    ,0)
+FROM HR_Requests R
+JOIN LastApproval LA
+    ON R.RequestId = LA.RequestId
+   AND LA.RN = 1
+WHERE R.EmployeeId = @EmployeeId
+AND R.RequestTypeId = @RequestTypeId
+AND LA.Status IN (0,1);"; // Pending / In Progress
+
+                    using (SqlConnection conPending = new SqlConnection(connStr))
+                    {
+                        conPending.Open();
+
+                        SqlCommand pendingCmd =
+                            new SqlCommand(pendingQuery, conPending);
+
+                        pendingCmd.Parameters.AddWithValue(
+                            "@EmployeeId",
+                            employeeId);
+
+                        pendingCmd.Parameters.AddWithValue(
+                            "@RequestTypeId",
+                            requestTypeId);
+
+                        pendingDays =
+                            Convert.ToInt32(
+                                pendingCmd.ExecuteScalar());
+                    }
 
                     int remaining = balance - used;
+                    int availableBalance = remaining - pendingDays;
 
                     // =========================
                     // CHECK BALANCE
                     // =========================
-                    if (requestedDays > remaining)
+                    if (requestedDays > availableBalance)
                     {
                         return
                         (
                             false,
-                            $"رصيد إجازة {leaveName} غير كافٍ<br>" +
-                            $"الرصيد المتبقي: {remaining} يوم"
+                            $"رصيد إجازة {leaveName} غير كافٍ< br>" +
+                            $"الرصيد الأساسي: {balance} يوم<br>" +
+                            $"المستخدم: {used} يوم<br>" +
+                            $"المعلق: {pendingDays} يوم<br>" +
+                            $"المتاح حالياً: {availableBalance} يوم<br>" +
+                            $"المطلوب: {requestedDays} يوم"
                         );
                     }
 
