@@ -354,6 +354,7 @@ if (requestTypeId==1 )
             var vm = new LeaveRequestVM();
 
             var employees = new List<SelectListItem>();
+            var allemployees = new List<SelectListItem>();
             var types = new List<SelectListItem>();
             var holidays = new List<SelectListItem>();
 
@@ -475,8 +476,28 @@ if (requestTypeId==1 )
                         });
                     }
                 }
+
+                string q4 = "";
+
+                    // HR يشوف كل الموظفين
+                    q4 = "SELECT EmployeeId, EmployeeName FROM HR_Employees WHERE IsActive = 1";
+
+                SqlCommand cmd4 = new SqlCommand(q4, con);
+
+                using (SqlDataReader dr4 = cmd4.ExecuteReader())
+                {
+                    while (dr4.Read())
+                    {
+                        allemployees.Add(new SelectListItem
+                        {
+                            Value = dr4["EmployeeId"].ToString(),
+                            Text = dr4["EmployeeName"].ToString()
+                        });
+                    }
+                }
             }
 
+            ViewBag.AllEmployees = allemployees;
             ViewBag.Employees = employees;
             ViewBag.RequestTypes = types;
             ViewBag.Holidays = holidays;
@@ -755,11 +776,11 @@ FROM HR_OfficialHolidays ";
                         string insertSql = @"
 INSERT INTO HR_Requests
 (RequestTypeId, EmployeeId, FromDate, ToDate, FromTime, ToTime,
- Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate,MedicalExam,HolidayId)
+ Location, Purpose, Result, FilePath, Notes, Status, CurrentStep, CreatedDate,MedicalExam,HolidayId,ActingEmployeeId,MissionPercentage)
 OUTPUT INSERTED.RequestId
 VALUES
 (@TypeId, @EmpId, @FromDate, @ToDate, @FromTime, @ToTime,
- @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE(),@MedicalExam,@HolidayId);";
+ @Location, @Purpose, @Result, @FilePath, @Notes, 0, 1, GETDATE(),@MedicalExam,@HolidayId,@ActingEmployeeId,@MissionPercentage);";
 
                         List<string> insertedDays = new List<string>();
                         List<string> skippedDays = new List<string>();
@@ -793,7 +814,9 @@ VALUES
                             insertCmd.Parameters.Add("@MedicalExam", SqlDbType.Int).Value = model.MedicalExam;
                             insertCmd.Parameters.Add("@EmpId", SqlDbType.Int).Value = model.EmployeeId;
                             insertCmd.Parameters.Add("@HolidayId", SqlDbType.Int).Value = model.HolidayId;
-                            insertCmd.Parameters.Add("@FromDate", SqlDbType.Date).Value = date;
+                            insertCmd.Parameters.Add("@ActingEmployeeId", SqlDbType.Int).Value = model.ActingEmployeeId;
+                            insertCmd.Parameters.Add("@MissionPercentage", SqlDbType.Decimal).Value = model.MissionPercentage;
+                            insertCmd.Parameters.Add("@FromDate", SqlDbType.Date).Value = date; 
                             insertCmd.Parameters.Add("@ToDate", SqlDbType.Date).Value = date;
 
                             insertCmd.Parameters.Add("@FromTime", SqlDbType.Time).Value =

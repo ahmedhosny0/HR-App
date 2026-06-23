@@ -64,12 +64,24 @@
                 مأمورية يوم كامل
             </button>
 
-            <button class="btn btn-outline-warning filter-btn" data-type="6">
+            <button class="btn btn-outline-secondary filter-btn" data-type="6">
                 مأمورية التشغيل بنسبة
             </button>
 
-            <button class="btn btn-outline-secondary filter-btn" data-type="7">
+            <button class="btn btn-outline-light filter-btn" data-type="7">
                 بدل راحة
+            </button>
+
+            <button class="btn btn-outline-info filter-btn" data-type="8">
+                غير مدفوعة
+            </button>
+
+            <button class="btn btn-outline-primary filter-btn" data-type="9">
+                بدل عمل
+            </button>
+
+            <button class="btn btn-outline-success filter-btn" data-type="10">
+                تكليف عمل للتشغيل
             </button>
 
         </div>
@@ -144,6 +156,9 @@
                             الموظف
                         </th>
                         <th>
+                           تاريخ التعيين
+                        </th>
+                        <th>
                             الوظيفه
                         </th>
 
@@ -173,20 +188,16 @@
                         {
                             var badgeClass = item.RequestTypeId switch
                             {
-                                1 => "bg-primary",
-
-                                2 => "bg-warning text-dark",
-
-                                3 => "bg-danger",
-
-                                4 => "bg-success",
-
-                                5 => "bg-info text-dark",
-
-                                6 => "bg-warning text-dark",
-
-                                7 => "bg-secondary",
-
+                                1 => "bg-primary",            // أزرق
+                                2 => "bg-warning text-dark",  // أصفر
+                                3 => "bg-danger",             // أحمر
+                                4 => "bg-success",            // أخضر
+                                5 => "bg-info text-dark",     // سماوي
+                                6 => "bg-secondary",          // رمادي
+                                7 => "bg-dark",               // أسود
+                                8 => "bg-light text-dark",    // أبيض/فاتح
+                                9 => "text-bg-primary",       // أزرق Bootstrap 5
+                                10 => "text-bg-success",       // أخضر Bootstrap 5
                                 _ => "bg-light text-dark"
                             };
 
@@ -257,6 +268,12 @@
                                     </span>
 
                                 </td>
+                                <td data-label="تاريخ التعيين">
+                                    @item.HireDate.ToString("dd-MM-yyyy")
+
+                                    
+
+                                </td>
                                 <!-- EMPLOYEE -->
                                 <td data-label="الوظيفه">
 
@@ -323,6 +340,12 @@
                                                 @item.EmployeeName
 
                                             </div>
+                                            <div class="mb-3">
+
+                                                <strong>القائم بالأعمال:</strong>
+                                                @item.AssignEmployee
+
+                                            </div>
 
                                             <div class="mb-3">
 
@@ -376,6 +399,12 @@
 
                                                         <strong>إلى وقت:</strong>
                                                         @item.ToTime
+
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+
+                                                        <strong>النسبه:</strong>
+                                                        @item.MissionPercentage %
 
                                                     </div>
 

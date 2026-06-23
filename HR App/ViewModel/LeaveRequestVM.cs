@@ -16,6 +16,8 @@ namespace HR_App.ViewModel
         public string Notes { get; set; }
 
         public int Status { get; set; }
+        public decimal MissionPercentage { get; set; }
+        public int ActingEmployeeId { get; set; }
         public int MedicalExam { get; set; }
         public int CurrentStep { get; set; }
         public bool IsMultipleDays { get; set; }
