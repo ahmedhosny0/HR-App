@@ -6,12 +6,13 @@
         public int RequestTypeId { get; set; }     // كود خطوة الموافقة عشان نعرف نحدثها
         public int RequestId { get; set; }      // كود الطلب الأصلي
         public string EmployeeName { get; set; } // اسم الموظف اللي قدم الطلب
+        public string JobTitle { get; set; } // اسم الموظف اللي قدم الطلب
         public string RequestType { get; set; }  // نوع الطلب (إجازة، إذن، إلخ)
         public DateTime FromDate { get; set; }  // تاريخ البداية
+        public DateTime CreatedDate { get; set; }  // تاريخ البداية
         public DateTime ToDate { get; set; }    // تاريخ النهاية
         public int StepOrder { get; set; }      // ترتيب الخطوة (اختياري للعرض)
         public string Notes { get; set; }
-
         public string MedicalExam { get; set; }
 
         public string FilePath { get; set; }

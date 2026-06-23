@@ -19,7 +19,7 @@
 
         <div class="card-body p-4">
 
-            <form method="post" action="/Leave/AddRequestType">
+            <form method="post" action="/RequestType/AddRequestType">
 
                 <div class="mb-4">
                     <label class="form-label fw-bold mb-2">
@@ -91,12 +91,12 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="/Leave/EditRequestType?id=@item.RequestTypeId"
+                                        <a href="/RequestType/EditRequestType?id=@item.RequestTypeId"
                                            class="btn btn-sm btn-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
 
-                                        <a href="/Leave/DeleteRequestType?id=@item.RequestTypeId"
+                                        <a href="/RequestType/DeleteRequestType?id=@item.RequestTypeId"
                                            class="btn btn-sm btn-danger"
                                            onclick="return confirm('هل أنت متأكد من الحذف؟')">
                                             <i class="fas fa-trash"></i>

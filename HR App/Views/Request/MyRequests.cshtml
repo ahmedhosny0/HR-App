@@ -36,7 +36,9 @@
  *@
                         <th>الحالة</th>
                         <th>الموظف</th>
-@*                         <th>المدير</th>
+                        <th>تاريخ التعيين</th>
+                        <th>الوظيفه</th>
+                        @*                         <th>المدير</th>
  *@                        <th>نوع الطلب</th>
                         <th>من</th>
                         <th>إلى</th>
@@ -97,6 +99,12 @@
                             <td data-label="الموظف">
                                 <span class="fw-bold">@item.Employee</span>
                             </td>
+                            <td data-label="تاريخ التعيين">
+                                @item.HireDate.ToString("dd-MM-yyyy")
+                            </td>
+                            <td data-label="الوظيفه">
+                                <span class="fw-bold">@item.JobTitle</span>
+                            </td>
 
                             <!-- MANAGER -->
                            @*  <td data-label="المدير">
@@ -112,17 +120,17 @@
 
                             <!-- FROM -->
                             <td data-label="من">
-                                @item.FromDate.ToString("yyyy-MM-dd")
+                                @item.FromDate.ToString("dd-MM-yyyy")
                             </td>
 
                             <!-- TO -->
                             <td data-label="إلى">
-                                @item.ToDate.ToString("yyyy-MM-dd")
+                                @item.ToDate.ToString("dd-MM-yyyy")
                             </td>
 
                             <!-- CREATED -->
                             <td data-label="تاريخ الإنشاء">
-                                @item.CreatedDate.ToString("yyyy-MM-dd")
+                                @item.CreatedDate.ToString("dd-MM-yyyy")
                             </td>
 
                         </tr>
@@ -156,7 +164,7 @@
                 if (result.isConfirmed) {
                     $.ajax({
 
-                        url: '/Leave/DeleteRequest',
+                        url: '/Request/DeleteRequest',
                         type: 'POST',
                         data: { id: id },
 

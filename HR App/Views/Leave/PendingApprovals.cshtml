@@ -127,19 +127,30 @@
                             <input type="checkbox" id="selectAll" />
                         </th>
                         <th></th>
-
-                        <th>
-                            الإجراءات
-                        </th>
+                        @if (ViewBag.Role == "HeadOfficeHR")
+                        {
+                            <th>
+                                موافقه مع الارسال للدكتور
+                            </th>
+                        }
+                       
+                            <th>
+                                 موافقه- رفض
+                            </th>
+                        
+                        
 
                         <th>
                             الموظف
+                        </th>
+                        <th>
+                            الوظيفه
                         </th>
 
                         <th>
                             نوع الطلب
                         </th>
-
+                        
                         <th>
                             من تاريخ
                         </th>
@@ -147,7 +158,9 @@
                         <th>
                             إلى تاريخ
                         </th>
-
+                        <th>
+                            تاريخ الإنشاء
+                        </th>
                     </tr>
 
                 </thead>
@@ -197,10 +210,25 @@
                                     </button>
                                 </td>
                                 <!-- ACTIONS -->
-                                <td data-label="الإجراءات">
+                                @if (ViewBag.Role == "HeadOfficeHR")
+                                {
+                                    <td data-label="موافقه مع الارسال للدكتور ">
 
                                     <div class="d-flex justify-content-center gap-2">
+                                       
+                                            <!-- APPROVE -->
+                                            <button onclick="respond(@item.ApprovalId, @item.RequestId, 4)"
+                                                    class="btn btn-primary btn-sm action-btn">
 
+                                                <i class="fas fa-check-circle"></i>
+
+                                            </button>
+                                            </div>
+                                        </td>
+                                }
+                                <td data-label=" موافقه- رفض">
+
+                                    <div class="d-flex justify-content-center gap-2">                                       
                                         <!-- APPROVE -->
                                         <button onclick="respond(@item.ApprovalId, @item.RequestId, 2)"
                                                 class="btn btn-success btn-sm action-btn">
@@ -229,6 +257,14 @@
                                     </span>
 
                                 </td>
+                                <!-- EMPLOYEE -->
+                                <td data-label="الوظيفه">
+
+                                    <span class="fw-bold">
+                                        @item.JobTitle
+                                    </span>
+
+                                </td>
 
                                 <!-- TYPE -->
                                 <td data-label="نوع الطلب">
@@ -242,17 +278,22 @@
                                 <!-- FROM -->
                                 <td data-label="من تاريخ">
 
-                                    @item.FromDate.ToString("yyyy-MM-dd")
+                                    @item.FromDate.ToString("dd-MM-yyyy")
 
                                 </td>
 
                                 <!-- TO -->
                                 <td data-label="إلى تاريخ">
 
-                                    @item.ToDate.ToString("yyyy-MM-dd")
+                                    @item.ToDate.ToString("dd-MM-yyyy")
 
                                 </td>
+                                <!-- FROM -->
+                                <td data-label="تاريخ الإنشاء">
 
+                                    @item.CreatedDate.ToString("dd-MM-yyyy")
+
+                                </td>
                             </tr>
                             <div class="modal fade"
                                  id="detailsModal-@item.RequestId"

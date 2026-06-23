@@ -130,7 +130,7 @@
                             <input type="date"
                                    name="HireDate"
                                    class="form-control hire-date"
-                                   value="@(Model.HireDate?.ToString("yyyy-MM-dd"))" />
+                                   value="@(Model.HireDate?.ToString("dd-MM-yyyy"))" />
 
                         </div>
 
@@ -144,7 +144,7 @@
                             <input type="date"
                                    name="InsuranceStartDate"
                                    class="form-control"
-                                   value="@(Model.InsuranceStartDate?.ToString("yyyy-MM-dd"))" />
+                                   value="@(Model.InsuranceStartDate?.ToString("dd-MM-yyyy"))" />
 
                         </div>
                         <div class="col-md-6 mb-3">
@@ -216,7 +216,7 @@
                       
                        @*  <div class="col-md-4">
                             <label>آخر تحديث للرصيد الثانوي</label>
-                            <input type="date" value="@(Model.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd"))" name="LastLeaveBalanceUpdate" class="form-control" />
+                            <input type="date" value="@(Model.LastLeaveBalanceUpdate?.ToString("dd-MM-yyyy"))" name="LastLeaveBalanceUpdate" class="form-control" />
                         </div> *@
 
                         <!-- ACTIVE -->
@@ -245,7 +245,7 @@
                 <!-- BUTTONS -->
                 <div class="d-flex gap-2 mt-4">
 
-                    <a href="/Leave/Employees"
+                    <a href="/Employee/Employees"
                        class="btn btn-secondary flex-fill">
 
                         <i class="bi bi-arrow-right-circle me-2"></i>

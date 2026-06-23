@@ -19,7 +19,7 @@
 
         </div>
 
-        <a href="/Leave/CreateEmployee"
+        <a href="/Employee/CreateEmployee"
            class="btn btn-success shadow-sm">
 
             <i class="fa fa-plus"></i>
@@ -55,10 +55,10 @@
  *@
                         <th>تاريخ التعيين</th>
                         <th>تاريخ التأمين</th>
+                        <th>رصيد ثانوي</th>
+                        <th>مستخدم</th>
                         <th>اعتيادي</th>
-                        <th>مستخدم</th>
-                        <th>العارضة</th>
-                        <th>مستخدم</th>
+                        <th>عارضة</th>
                         <th>المرضي</th>
                         <th>مستخدم</th>
                         <th>الامتحانات</th>
@@ -79,12 +79,12 @@
                             
                             <!-- ACTIONS -->
                             <td data-label="الإجراءات">
-                                <a href="/Leave/EditEmployee?id=@item.EmployeeId"
+                                <a href="/Employee/EditEmployee?id=@item.EmployeeId"
                                    class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i>
                                 </a>
 
-                                <a href="/Leave/DeleteEmployee?id=@item.EmployeeId"
+                                <a href="/Employee/DeleteEmployee?id=@item.EmployeeId"
                                    class="btn btn-sm btn-danger"
                                    onclick="return confirm('هل أنت متأكد من الحذف؟')">
                                     <i class="fas fa-trash"></i>
@@ -124,22 +124,22 @@
 
                             <!-- HIRE DATE -->
                             <td data-label="تاريخ التعيين">
-                                @item.HireDate?.ToString("yyyy-MM-dd")
+                                @item.HireDate?.ToString("dd-MM-yyyy")
                             </td>
                             <!-- HIRE DATE -->
                             <td data-label="تاريخ التأمين">
-                                @item.InsuranceStartDate?.ToString("yyyy-MM-dd")
+                                @item.InsuranceStartDate?.ToString("dd-MM-yyyy")
                             </td>
                             <td data-label="الرصيد الثانوي">
-                                @item.AnnualLeaveBalance
+                                @item.SecondaryLeaveBalance
                             </td>
                             <td data-label="مستخدم">
+                                @item.SecondaryLeaveUsedDays
+                            </td>
+                            <td data-label="اعتيادي">
                                 @item.AnnualLeaveUsedDays
                             </td>
-                            <td data-label="العارضة">
-                                @item.CasualLeaveBalance
-                            </td>
-                            <td data-label="مستخدم">
+                            <td data-label="عارضه">
                                 @item.CasualLeaveUsedDays
                             </td>
                             <td data-label="المرضي">
@@ -155,7 +155,7 @@
                                 @item.ExamLeaveUsedDays
                             </td>
                            @*  <td data-label="آخر تحديث الرصيد">
-                                @item.LastLeaveBalanceUpdate?.ToString("yyyy-MM-dd")
+                                @item.LastLeaveBalanceUpdate?.ToString("dd-MM-yyyy")
                             </td> *@
                             <!-- STATUS -->
                             <td data-label="الحالة">
@@ -225,7 +225,7 @@
 
                 if (result.isConfirmed) {
 
-                    window.location.href = '/Leave/DeleteEmployee/' + id;
+                    window.location.href = '/Employee/DeleteEmployee/' + id;
 
                 }
 

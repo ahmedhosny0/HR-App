@@ -21,6 +21,8 @@
         public int? ParentRoleId { get; set; }
         public decimal AnnualLeaveUsedDays { get; set; }
         public decimal AnnualLeaveBalance { get; set; }
+        public decimal SecondaryLeaveUsedDays { get; set; }
+        public decimal SecondaryLeaveBalance { get; set; }
         public decimal CasualLeaveUsedDays { get; set; } = 7;
         public decimal CasualLeaveBalance { get; set; } = 7;
         public decimal SickLeaveUsedDays { get; set; }

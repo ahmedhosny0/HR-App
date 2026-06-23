@@ -70,51 +70,35 @@
                                 <div class="row g-3">
 
                                     <!-- Annual -->
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="p-3 rounded bg-light text-center border">
-                                            <h6 class="fw-bold text-primary">الاعتيادي</h6>
+                                            <h6 class="fw-bold text-primary">الثانوي</h6>
 
                                             <div>
                                                 <small>الرصيد:</small>
-                                                <strong id="annualBalance"></strong>
+                                                <strong id="secondaryBalance"></strong>
                                             </div>
 
                                             <div>
                                                 <small>المستخدم:</small>
+                                                <small>إعتيادي:</small>
                                                 <strong id="annualUsed"></strong>
-                                            </div>
-
-                                            <div>
-                                                <small>المتبقي:</small>
-                                                <strong id="annualRemain"></strong>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Casual -->
-                                    <div class="col-md-3">
-                                        <div class="p-3 rounded bg-light text-center border">
-                                            <h6 class="fw-bold text-warning">العارضة</h6>
-
-                                            <div>
-                                                <small>الرصيد:</small>
-                                                <strong id="casualBalance"></strong>
-                                            </div>
-
-                                            <div>
-                                                <small>المستخدم:</small>
+                                                <small>عارضه:</small>
                                                 <strong id="casualUsed"></strong>
+
                                             </div>
 
                                             <div>
                                                 <small>المتبقي:</small>
-                                                <strong id="casualRemain"></strong>
+                                                <strong id="secondaryRemain"></strong>
                                             </div>
                                         </div>
                                     </div>
+
+                                  
 
                                     <!-- Sick -->
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="p-3 rounded bg-light text-center border">
                                             <h6 class="fw-bold text-danger">المرضي</h6>
 
@@ -136,7 +120,7 @@
                                     </div>
 
                                     <!-- Exam -->
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="p-3 rounded bg-light text-center border">
                                             <h6 class="fw-bold text-success">الامتحانات</h6>
 
@@ -504,7 +488,7 @@
             // =========================
             // MISSIONS
             // =========================
-            else if (typeId == '5' || typeId == '6') {
+            else if (typeId == '5' || typeId == '6'|| typeId == '10') {
 
                 $('#missionFields').show();
 
@@ -650,7 +634,7 @@
                     return;
                 }
             }
-            if (typeId == '5' || typeId == '6') {
+            if (typeId == '5' || typeId == '6'|| typeId == '10') {
 
                 if (!fromTime || !toTime) {
 
@@ -864,7 +848,7 @@
 
             $.ajax({
 
-                url: '/Leave/GetEmployeeLeaveBalance',
+                url: '/Request/GetEmployeeLeaveBalance',
 
                 type: 'GET',
 
@@ -891,13 +875,13 @@
 
             $('#empCode').text("الكود: " + (res.employeeCode ?? ''));
 
-            $('#annualBalance').text(res.annualBalance ?? 0);
-            $('#annualUsed').text(res.annualUsed ?? 0);
-            $('#annualRemain').text((res.annualBalance ?? 0) - (res.annualUsed ?? 0));
+             $('#secondaryBalance').text(res.secondaryBalance ?? 0);
+            $('#secondaryUsed').text(res.secondaryUsed ?? 0);
+            $('#secondaryRemain').text((res.secondaryBalance ?? 0) - (res.secondaryUsed ?? 0));
 
-            $('#casualBalance').text(res.casualBalance ?? 0);
+            $('#annualUsed').text(res.annualUsed ?? 0);
+
             $('#casualUsed').text(res.casualUsed ?? 0);
-            $('#casualRemain').text((res.casualBalance ?? 0) - (res.casualUsed ?? 0));
 
             $('#sickBalance').text(res.sickBalance ?? 0);
             $('#sickUsed').text(res.sickUsed ?? 0);
@@ -912,9 +896,10 @@
 
             $('#empName,#empCode').text('');
 
-            $('#annualBalance,#annualUsed,#annualRemain').text('');
+            $('#secondaryBalance,#secondaryUsed,#secondaryRemain').text('');
+            $('#annualUsed').text('');
 
-            $('#casualBalance,#casualUsed,#casualRemain').text('');
+            $('#casualUsed').text('');
 
             $('#sickBalance,#sickUsed,#sickRemain').text('');
 

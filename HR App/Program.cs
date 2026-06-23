@@ -12,7 +12,7 @@ using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
-
+builder.Services.AddScoped<LeavePolicyService>();
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
 builder.Services.Configure<RequestLocalizationOptions>(options =>
