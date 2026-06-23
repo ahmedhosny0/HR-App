@@ -72,30 +72,147 @@
                                     <!-- Annual -->
                                     <div class="col-md-4">
                                         <div class="p-3 rounded bg-light text-center border">
-                                            <h6 class="fw-bold text-primary">الثانوي</h6>
+                                            <h6 class="fw-bold text-primary">
+                                                الرصيد السنوي
+                                            </h6>
+                                            <div>
+                                                <small>الإجمالي:</small>
+                                                <strong id="annualBalance"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>اعتيادي:</small>
+                                                <strong id="annualUsed"></strong>
+                                            </div>
+
+                                            <div>
+                                                <small>عارضة:</small>
+                                                <strong id="casualUsed"></strong>
+                                            </div>
+                                           @*  <div>
+                                                <small>المتبقي:</small>
+                                                <strong id="annualRemain"></strong>
+                                            </div> *@
+                                        </div>
+                                    </div>
+
+@*                                     <div class="card-body">
+
+                                        <div class="row g-3">
+
+                                            <!-- Annual -->
+                                            <div class="col-12 col-sm-6 col-lg-4">
+
+                                                <div class="p-3 rounded bg-light text-center border h-100">
+
+                                                    <h6 class="fw-bold text-primary">
+                                                        الرصيد السنوي
+                                                    </h6>
+
+                                                    <div class="mb-1">
+                                                        <small class="text-muted">الإجمالي:</small>
+                                                        <strong id="annualBalance"></strong>
+                                                    </div>
+
+                                                    <div class="mb-1">
+                                                        <small class="text-muted">اعتيادي:</small>
+                                                        <strong id="annualUsed"></strong>
+                                                    </div>
+
+                                                    <div class="mb-1">
+                                                        <small class="text-muted">عارضة:</small>
+                                                        <strong id="casualUsed"></strong>
+                                                    </div>
+
+                                                    <div class="mb-1">
+                                                        <small class="text-muted">إجمالي المستخدم:</small>
+                                                        <strong id="totalAnnualUsed"></strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small class="text-muted">المتبقي:</small>
+                                                        <strong class="text-success"
+                                                                id="annualRemain"></strong>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                            <!-- Sick -->
+                                            <div class="col-12 col-sm-6 col-lg-4">
+
+                                                <div class="p-3 rounded bg-light text-center border h-100">
+
+                                                    <h6 class="fw-bold text-danger">
+                                                        المرضي
+                                                    </h6>
+
+                                                    <div>
+                                                        <small>الرصيد:</small>
+                                                        <strong id="sickBalance"></strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>المستخدم:</small>
+                                                        <strong id="sickUsed"></strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>المتبقي:</small>
+                                                        <strong id="sickRemain"></strong>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                            <!-- Exam -->
+                                            <div class="col-12 col-sm-6 col-lg-4">
+
+                                                <div class="p-3 rounded bg-light text-center border h-100">
+
+                                                    <h6 class="fw-bold text-success">
+                                                        الامتحانات
+                                                    </h6>
+
+                                                    <div>
+                                                        <small>الرصيد:</small>
+                                                        <strong id="examBalance"></strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>المستخدم:</small>
+                                                        <strong id="examUsed"></strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <small>المتبقي:</small>
+                                                        <strong id="examRemain"></strong>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div> *@
+
+                                    <!-- Casual -->
+                                    <div class="col-md-3">
+                                        <div class="p-3 rounded bg-light text-center border">
+                                            <h6 class="fw-bold text-warning">العارضة</h6>
 
                                             <div>
                                                 <small>الرصيد:</small>
-                                                <strong id="secondaryBalance"></strong>
+                                                <strong id="casualBalance"></strong>
                                             </div>
 
                                             <div>
                                                 <small>المستخدم:</small>
-                                                <small>إعتيادي:</small>
-                                                <strong id="annualUsed"></strong>
-                                                <small>عارضه:</small>
                                                 <strong id="casualUsed"></strong>
-
                                             </div>
-
-                                            <div>
-                                                <small>المتبقي:</small>
-                                                <strong id="secondaryRemain"></strong>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                  
 
                                     <!-- Sick -->
                                     <div class="col-md-4">
@@ -875,21 +992,30 @@
 
             $('#empCode').text("الكود: " + (res.employeeCode ?? ''));
 
-             $('#secondaryBalance').text(res.secondaryBalance ?? 0);
-            $('#secondaryUsed').text(res.secondaryUsed ?? 0);
-            $('#secondaryRemain').text((res.secondaryBalance ?? 0) - (res.secondaryUsed ?? 0));
+            let annualBalance = Number(res.annualBalance ?? 0);
+            let annualUsed = Number(res.annualUsed ?? 0);
+            let casualUsed = Number(res.casualUsed ?? 0);
 
-            $('#annualUsed').text(res.annualUsed ?? 0);
+            let totalAnnualUsed = annualUsed + casualUsed;
+            let annualRemain = annualBalance - totalAnnualUsed;
 
-            $('#casualUsed').text(res.casualUsed ?? 0);
+            $('#annualBalance').text(annualBalance);
+            $('#annualUsed').text(annualUsed);
+            $('#casualUsed').text(casualUsed);
+            $('#totalAnnualUsed').text(totalAnnualUsed);
+            $('#annualRemain').text(annualRemain);
 
             $('#sickBalance').text(res.sickBalance ?? 0);
             $('#sickUsed').text(res.sickUsed ?? 0);
-            $('#sickRemain').text((res.sickBalance ?? 0) - (res.sickUsed ?? 0));
+            $('#sickRemain').text(
+                (res.sickBalance ?? 0) - (res.sickUsed ?? 0)
+            );
 
             $('#examBalance').text(res.examBalance ?? 0);
             $('#examUsed').text(res.examUsed ?? 0);
-            $('#examRemain').text((res.examBalance ?? 0) - (res.examUsed ?? 0));
+            $('#examRemain').text(
+                (res.examBalance ?? 0) - (res.examUsed ?? 0)
+            );
         }
 
         function resetCard() {
