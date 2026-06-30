@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace HR_App.Controllers
 {
-    public class EmployeeHierarchyController : Controller
+    public class EmployeeHierarchyController : BaseController
     {
         private string connStr = string.Format("Server=192.168.1.208;User ID=sa;Password=P@ssw0rd123;Database=TopSoft;Connect Timeout=10200;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;");
         #region EmployeeHierarchy

@@ -20,6 +20,8 @@ namespace HR_App.Services
             // =========================
             // 1. قبل 48 ساعة (اعتيادي)
             // =========================
+            //1 -> اعتيادي
+            //8 -> غير مدفوعه
             if (requestTypeId == 1 || requestTypeId == 8)
             {
                 if ((fromDate - today).TotalDays < 2)
